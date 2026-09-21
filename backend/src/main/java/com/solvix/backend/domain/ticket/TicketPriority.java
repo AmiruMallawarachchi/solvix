@@ -1,0 +1,8 @@
+package com.solvix.backend.domain.ticket;
+
+public enum TicketPriority {
+    LOW,
+    MEDIUM,
+    HIGH,
+    URGENT
+}
