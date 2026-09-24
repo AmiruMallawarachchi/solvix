@@ -20,14 +20,48 @@ public class Ticket {
     private Instant updatedAt;
 
     public Ticket(UUID id, String title, String description, TicketPriority priority, String createdBy) {
+        this(id, title, description, priority, createdBy, TicketStatus.NEW, null, Instant.now(), Instant.now(), List.of());
+    }
+
+    private Ticket(
+            UUID id,
+            String title,
+            String description,
+            TicketPriority priority,
+            String createdBy,
+            TicketStatus status,
+            String assignee,
+            Instant createdAt,
+            Instant updatedAt,
+            List<String> comments
+    ) {
         this.id = Objects.requireNonNull(id);
         this.title = requireText(title, "title");
         this.description = requireText(description, "description");
         this.priority = Objects.requireNonNull(priority);
         this.createdBy = requireText(createdBy, "createdBy");
-        this.status = TicketStatus.NEW;
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
+        this.status = status == null ? TicketStatus.NEW : status;
+        this.assignee = assignee;
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+        this.updatedAt = updatedAt == null ? this.createdAt : updatedAt;
+        if (comments != null) {
+            this.comments.addAll(comments.stream().map(comment -> requireText(comment, "comment")).toList());
+        }
+    }
+
+    public static Ticket fromPersistence(
+            UUID id,
+            String title,
+            String description,
+            TicketPriority priority,
+            TicketStatus status,
+            String createdBy,
+            String assignee,
+            Instant createdAt,
+            Instant updatedAt,
+            List<String> comments
+    ) {
+        return new Ticket(id, title, description, priority, createdBy, status, assignee, createdAt, updatedAt, comments);
     }
 
     public void changeStatus(TicketStatus newStatus) {

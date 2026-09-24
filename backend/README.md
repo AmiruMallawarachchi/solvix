@@ -4,7 +4,7 @@ Java 17 + Spring Boot 3 backend for the Solvix ticketing workflow.
 
 ## Current slice
 
-The first backend slice intentionally uses an in-memory repository. It supports:
+The backend now uses PostgreSQL-backed persistence through a JPA repository adapter. It supports:
 
 - create a ticket
 - list tickets
@@ -13,13 +13,20 @@ The first backend slice intentionally uses an in-memory repository. It supports:
 - assign a ticket
 - add a comment
 
-This gives us a working domain and API flow before introducing PostgreSQL, authentication, background workers, and AI.
+This keeps the domain model stable while moving the application from in-memory testing to a persistent, production-like storage layer.
 
-## Run
+## Run locally
 
-From this directory:
+Start the database:
+
+```bash
+docker compose up -d postgres
+```
+
+Then run the API:
 
 ```powershell
+cd backend
 mvn spring-boot:run
 ```
 
@@ -28,6 +35,7 @@ The API starts on `http://localhost:8080`.
 ## Test
 
 ```powershell
+cd backend
 mvn test
 ```
 
@@ -49,6 +57,6 @@ Content-Type: application/json
 
 - `domain.ticket`: ticket rules and domain values
 - `application.ticket`: use cases and repository port
-- `infrastructure.ticket`: current in-memory repository adapter
+- `infrastructure.ticket`: JPA persistence adapter and entity mapping
 - `web.ticket`: HTTP controller and request/response DTOs
 - `web.error`: consistent HTTP error mapping

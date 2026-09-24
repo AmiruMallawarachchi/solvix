@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: solvix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: solvix
+      POSTGRES_USER: solvix
+      POSTGRES_PASSWORD: solvix
+    ports:
+      - "5432:5432"
+    volumes:
+      - solvix_pg_data:/var/lib/postgresql/data
+
+volumes:
+  solvix_pg_data:
