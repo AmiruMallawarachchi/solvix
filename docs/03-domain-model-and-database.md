@@ -613,6 +613,8 @@ Operations such as creating a ticket and creating its initial status history sho
 
 - use UUIDs or strong numeric IDs for entity identity
 - store timestamps in UTC
+- manage schema creation and evolution with versioned Flyway migrations
+- run Hibernate in validation mode so application startup never changes the schema implicitly
 - keep audit trails immutable in practice
 - use enums or constrained values for statuses, priorities, categories, and roles
 - store large payloads such as file metadata and JSON details separately when practical
