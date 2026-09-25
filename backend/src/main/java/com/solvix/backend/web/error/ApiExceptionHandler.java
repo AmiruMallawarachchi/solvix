@@ -1,6 +1,7 @@
 package com.solvix.backend.web.error;
 
 import com.solvix.backend.application.ticket.TicketNotFoundException;
+import com.solvix.backend.application.ticket.TicketAccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -14,6 +15,12 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleTicketNotFound(TicketNotFoundException exception) {
         return Map.of("error", "NOT_FOUND", "message", exception.getMessage());
+    }
+
+    @ExceptionHandler(TicketAccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> handleTicketAccessDenied(TicketAccessDeniedException exception) {
+        return Map.of("error", "FORBIDDEN", "message", exception.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

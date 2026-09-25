@@ -49,13 +49,15 @@ The API is designed around the core workflows:
 
 ### Authentication
 
-Protected routes require a bearer token or session-based authenticated user context.
+The current backend slice protects ticket routes with stateless HTTP Basic authentication. Production token-based login endpoints remain part of the planned identity-provider integration.
 
 ---
 
 ## 3. Authentication endpoints
 
 ### POST /api/v1/auth/login
+
+> Planned contract. The current backend does not expose this endpoint yet; configure the local HTTP Basic users described in the backend README instead.
 
 Request body:
 

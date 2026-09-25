@@ -56,6 +56,8 @@ This document defines the MVP API contract for Solvix. It is the root-level refe
 
 The API should be thin and orchestrative. Business rules belong in the backend application services, not in the HTTP layer alone. Ticket lifecycle and authorization checks must be enforced on the server, and AI actions must be logged and approval-gated when they affect state.
 
+The first implemented security slice uses stateless HTTP Basic authentication. The authenticated principal supplies the ticket owner identity, so clients cannot set `createdBy` for another user. JWT login and identity-provider integration remain planned work.
+
 ## Detailed contract
 
 See [api/api-specification.md](./api/api-specification.md) for the detailed request/response payload definitions and MVP endpoint flow.

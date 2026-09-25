@@ -38,7 +38,7 @@ Secrets, tokens, and internal configuration should not be committed to source co
 
 ### 3.1 Identity and access
 
-User identity should be established through a secure authentication mechanism. Users are mapped to roles and permission sets that determine access to tickets, dashboards, admin settings, and AI actions.
+The first backend security slice uses stateless HTTP Basic authentication backed by configured application users. Credentials are supplied through environment variables and passwords are encoded with BCrypt. This is intentionally a small local/MVP step; production deployment should replace it with the organization’s identity provider and short-lived token flow.
 
 ### 3.2 Authorization model
 
@@ -52,6 +52,13 @@ The system should support at least:
 - administrator
 
 Authorization should be enforced at the resource layer and action layer.
+
+The current ticket rules are:
+
+- customers can create tickets and access only tickets they created
+- customers can add comments to their own tickets
+- support agents can view all tickets, assign tickets, change status, and comment
+- the backend derives `createdBy` from the authenticated principal rather than trusting request data
 
 Examples:
 - a support agent may view assigned tickets
