@@ -49,7 +49,7 @@ The API is designed around the core workflows:
 
 ### Authentication
 
-The current backend slice protects ticket routes with stateless HTTP Basic authentication. Production token-based login endpoints remain part of the planned identity-provider integration.
+The current backend slice protects ticket routes with stateless JWT bearer authentication. Users are stored in PostgreSQL, while initial local users are bootstrapped from environment variables.
 
 ---
 
@@ -57,13 +57,11 @@ The current backend slice protects ticket routes with stateless HTTP Basic authe
 
 ### POST /api/v1/auth/login
 
-> Planned contract. The current backend does not expose this endpoint yet; configure the local HTTP Basic users described in the backend README instead.
-
 Request body:
 
 ```json
 {
-  "email": "user@example.com",
+  "username": "support-1",
   "password": "secret"
 }
 ```
@@ -76,10 +74,8 @@ Success response:
   "data": {
     "token": "jwt-token",
     "user": {
-      "id": "usr_123",
-      "email": "user@example.com",
+      "username": "support-1",
       "role": "support_agent",
-      "fullName": "Ava Chen"
     }
   },
   "error": null

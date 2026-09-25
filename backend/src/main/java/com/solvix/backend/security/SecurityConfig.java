@@ -1,20 +1,23 @@
 package com.solvix.backend.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -22,11 +25,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/tickets/**").authenticated()
                         .anyRequest().denyAll()
                 )
-                .httpBasic(basic -> {});
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -36,23 +39,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    InMemoryUserDetailsManager userDetailsService(
-            PasswordEncoder passwordEncoder,
-            @Value("${solvix.security.users.customer.username}") String customerUsername,
-            @Value("${solvix.security.users.customer.password}") String customerPassword,
-            @Value("${solvix.security.users.support.username}") String supportUsername,
-            @Value("${solvix.security.users.support.password}") String supportPassword
-    ) {
-        return new InMemoryUserDetailsManager(
-                User.withUsername(customerUsername)
-                        .password(passwordEncoder.encode(customerPassword))
-                        .roles("CUSTOMER")
-                        .build(),
-                User.withUsername(supportUsername)
-                        .password(passwordEncoder.encode(supportPassword))
-                        .roles("SUPPORT_AGENT")
-                        .build()
-        );
-    }
 }

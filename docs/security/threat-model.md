@@ -38,7 +38,7 @@ Secrets, tokens, and internal configuration should not be committed to source co
 
 ### 3.1 Identity and access
 
-The first backend security slice uses stateless HTTP Basic authentication backed by configured application users. Credentials are supplied through environment variables and passwords are encoded with BCrypt. This is intentionally a small local/MVP step; production deployment should replace it with the organization’s identity provider and short-lived token flow.
+The current backend security slice uses stateless JWT bearer authentication backed by users stored in PostgreSQL. Bootstrap credentials are supplied only through environment variables on first startup, and passwords are stored as BCrypt hashes. Tokens expire after 15 minutes. Production deployment can later replace the login boundary with the organization’s OIDC provider without changing ticket authorization rules.
 
 ### 3.2 Authorization model
 
