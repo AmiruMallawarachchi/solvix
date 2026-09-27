@@ -51,6 +51,106 @@ The API is designed around the core workflows:
 
 The current backend slice protects ticket routes with stateless JWT bearer authentication. Users are stored in PostgreSQL, while initial local users are bootstrapped from environment variables.
 
+### Implemented backend contract
+
+The routes below reflect the backend implementation today. All ticket routes require `Authorization: Bearer <token>`. Login returns the token fields directly (there is no `success`/`data` envelope).
+
+#### POST /api/v1/auth/login
+
+Request:
+
+```json
+{
+  "username": "support-1",
+  "password": "secret"
+}
+```
+
+Response (`200 OK`):
+
+```json
+{
+  "token": "jwt-token",
+  "username": "support-1",
+  "role": "SUPPORT_AGENT"
+}
+```
+
+Invalid credentials return `401 Unauthorized`.
+
+#### POST /api/v1/tickets
+
+Creates a ticket. The owner is taken from the authenticated principal; `createdBy` is not accepted from the client.
+
+Request:
+
+```json
+{
+  "title": "Billing sync issue",
+  "description": "The subscription remains inactive after payment.",
+  "priority": "HIGH"
+}
+```
+
+Response (`201 Created`) is a ticket object:
+
+```json
+{
+  "id": "ticket-uuid",
+  "title": "Billing sync issue",
+  "description": "The subscription remains inactive after payment.",
+  "priority": "HIGH",
+  "status": "NEW",
+  "createdBy": "support-1",
+  "assignee": null,
+  "createdAt": "2026-09-27T00:00:00Z",
+  "updatedAt": "2026-09-27T00:00:00Z",
+  "comments": []
+}
+```
+
+#### GET /api/v1/tickets
+
+Returns an array of ticket objects. Customers see only their own tickets; support agents see all tickets. Pagination and filters are not implemented.
+
+#### GET /api/v1/tickets/{id}
+
+Returns one ticket object. Missing tickets return `404 Not Found`; tickets outside a customer's ownership scope return `403 Forbidden`.
+
+#### PATCH /api/v1/tickets/{id}/status
+
+Support agents only. Request body:
+
+```json
+{
+  "status": "IN_PROGRESS"
+}
+```
+
+Allowed status values: `NEW`, `TRIAGED`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`.
+
+#### POST /api/v1/tickets/{id}/assign
+
+Support agents only. Request body:
+
+```json
+{
+  "assignee": "agent-1"
+}
+```
+
+#### POST /api/v1/tickets/{id}/comments
+
+Accessible to the ticket owner and support agents. Request body:
+
+```json
+{
+  "comment": "I have attached the receipt."
+}
+```
+
+Ticket mutations and reads return the ticket object directly. Invalid request bodies return `400 Bad Request`; unauthorized users receive `401 Unauthorized` when unauthenticated and `403 Forbidden` when authenticated without permission.
+
 ---
 
 ## 3. Authentication endpoints
@@ -70,29 +170,27 @@ Success response:
 
 ```json
 {
-  "success": true,
-  "data": {
-    "token": "jwt-token",
-    "user": {
-      "username": "support-1",
-      "role": "support_agent",
-    }
-  },
-  "error": null
+  "token": "jwt-token",
+  "username": "support-1",
+  "role": "SUPPORT_AGENT"
 }
 ```
 
 ### POST /api/v1/auth/logout
 
-Invalidates the current session or token.
+Planned endpoint; token revocation is not currently implemented. JWTs expire after 15 minutes.
 
 ### GET /api/v1/auth/me
 
-Returns the current authenticated user and scoped profile data.
+Planned endpoint; not currently implemented.
 
 ---
 
-## 4. User and team endpoints
+## 4. Planned endpoints (not implemented)
+
+The remaining endpoint descriptions in this document are future design proposals, not part of the current backend API contract.
+
+### User and team endpoints
 
 ### GET /api/v1/users/me
 
@@ -108,7 +206,7 @@ Returns members for a team.
 
 ---
 
-## 5. Ticket endpoints
+### Planned ticket endpoint expansions
 
 ### POST /api/v1/tickets
 
@@ -200,7 +298,7 @@ May be restricted to admin or specific roles, depending on policy.
 
 ---
 
-## 6. Ticket assignment endpoints
+### Planned assignment endpoint expansions
 
 ### POST /api/v1/tickets/{ticketId}/assign
 
@@ -237,7 +335,7 @@ Returns assignment history for the ticket.
 
 ---
 
-## 7. Comment endpoints
+## 7. Planned comment endpoint expansions
 
 ### POST /api/v1/tickets/{ticketId}/comments
 
@@ -257,7 +355,7 @@ Returns comment history for the ticket.
 
 ---
 
-## 8. Ticket status history endpoints
+## 8. Planned ticket status history endpoints
 
 ### GET /api/v1/tickets/{ticketId}/history
 
@@ -284,7 +382,7 @@ Example response:
 
 ---
 
-## 9. Attachment endpoints
+## 9. Planned attachment endpoints
 
 ### POST /api/v1/tickets/{ticketId}/attachments
 
@@ -302,7 +400,7 @@ Returns attachment metadata for the ticket.
 
 ---
 
-## 10. Dashboard endpoints
+## 10. Planned dashboard endpoints
 
 ### GET /api/v1/dashboard/overview
 
@@ -332,7 +430,7 @@ Returns operational details for one team.
 
 ---
 
-## 11. AI triage endpoints
+## 11. Planned AI triage endpoints
 
 ### POST /api/v1/ai/triage
 
@@ -366,7 +464,7 @@ Returns AI job status, evidence summary, and output metadata.
 
 ---
 
-## 12. Approval workflow endpoints
+## 12. Planned approval workflow endpoints
 
 ### POST /api/v1/ai/approvals
 
@@ -390,7 +488,7 @@ Returns current approval state for the specified AI job.
 
 ---
 
-## 13. Search and filtering endpoints
+## 13. Planned search and filtering endpoints
 
 ### GET /api/v1/search/tickets
 

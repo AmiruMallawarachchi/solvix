@@ -22,35 +22,16 @@ This document defines the MVP API contract for Solvix. It is the root-level refe
 
 ### Authentication
 - POST /api/v1/auth/login
-- POST /api/v1/auth/logout
-- GET /api/v1/auth/me
 
-### Users and teams
-- GET /api/v1/users/me
-- GET /api/v1/teams
-- GET /api/v1/teams/{teamId}/members
-
-### Ticket management
+### Implemented ticket management
 - POST /api/v1/tickets
 - GET /api/v1/tickets
 - GET /api/v1/tickets/{ticketId}
-- PATCH /api/v1/tickets/{ticketId}
+- PATCH /api/v1/tickets/{ticketId}/status
 - POST /api/v1/tickets/{ticketId}/assign
-- GET /api/v1/tickets/{ticketId}/history
 - POST /api/v1/tickets/{ticketId}/comments
-- GET /api/v1/tickets/{ticketId}/comments
-- POST /api/v1/tickets/{ticketId}/attachments
-- GET /api/v1/tickets/{ticketId}/attachments
 
-### Dashboard and search
-- GET /api/v1/dashboard/overview
-- GET /api/v1/search/tickets
-
-### AI workflow
-- POST /api/v1/ai/triage
-- GET /api/v1/ai/jobs/{jobId}
-- POST /api/v1/ai/approvals
-- GET /api/v1/ai/approvals/{jobId}
+The detailed specification distinguishes implemented behavior from planned endpoints. Pagination and filtering are not implemented yet.
 
 ## Design notes
 
