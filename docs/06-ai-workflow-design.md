@@ -4,6 +4,10 @@
 
 This document explains the initial AI design for Solvix and defines how the AI subsystem fits inside the larger operational system.
 
+## Delivery status
+
+AI triage and evidence retrieval are part of the longer-term product vision, but are explicitly deferred from the near-term MVP. The first release focuses on making the human ticket workflow usable end-to-end. Do not add AI jobs, providers, queues, or approval workflows until that workflow is complete and validated.
+
 ## AI design principles
 
 - AI assists workflow execution; it does not own business state.

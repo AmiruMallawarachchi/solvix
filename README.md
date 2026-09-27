@@ -17,18 +17,25 @@ AI-assisted enterprise operations platform — ticketing + agentic AI resolution
 
 ## Local backend setup
 
-The backend now persists tickets in PostgreSQL, with a lightweight Docker Compose setup for local development.
+The backend persists tickets in PostgreSQL, with a lightweight Docker Compose setup for local development. Configure the required bootstrap credentials and JWT signing secret as described in [backend setup](./backend/README.md).
 
-```bash
+```powershell
 docker compose up -d postgres
+```
+
+Start the backend in one PowerShell window:
+
+```powershell
 cd backend
 mvn spring-boot:run
 ```
 
-The default Postgres connection is configured for:
+Then start the web app in another window:
 
-- database: `solvix`
-- username: `solvix`
-- password: `solvix`
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
 
-The API still exposes the existing ticket endpoints at `http://localhost:8080/api/v1/tickets`.
+The UI is available at `http://localhost:3000`; the API is at `http://localhost:8080`.

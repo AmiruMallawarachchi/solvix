@@ -127,20 +127,19 @@ In practice, Solvix makes it easier for organizations to record, route, investig
 - dashboard and operational reporting for teams and managers
 - role-based administration and configuration
 
-### Planned MVP scope
+### Near-term MVP scope
 
-The first implementation will focus on the core workflow:
+The first usable release is deliberately limited to the human-operated ticket workflow:
 
-1. user login
-2. create ticket
-3. view ticket
-4. update ticket status
-5. assign ticket to a team or user
-6. add comments
-7. persist data in a reliable backend
-8. run AI classification over the ticket
-9. store AI output and evidence
-10. provide visibility to users and managers
+1. customer and support-agent login
+2. create, list, and view tickets with ownership checks
+3. move tickets through an enforced lifecycle
+4. assign a ticket to a support-agent username
+5. add comments that retain their author and timestamp
+6. review the ticket's activity history
+7. use a small web interface to complete these workflows
+
+AI triage, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration remain part of the longer-term product vision but are deferred until the core workflow is usable.
 
 ---
 
@@ -155,7 +154,7 @@ Solvix is not intended to be:
 - a platform for replacing human decision-making in every operational workflow
 - a distributed microservices ecosystem without demonstrated need
 
-The initial product should solve a focused and valuable problem well, rather than trying to cover every operational domain at once.
+The initial product should solve a focused and valuable problem well, rather than trying to cover every operational domain at once. For the near-term MVP, AI execution, team management, analytics, integrations, and attachments are explicitly deferred.
 
 ---
 
@@ -164,13 +163,14 @@ The initial product should solve a focused and valuable problem well, rather tha
 Solvix will be considered successful when it demonstrates the following:
 
 - users can create and manage tickets in a single workflow
-- tickets can be triaged and assigned to the correct owner
-- relevant knowledge and evidence can be surfaced during investigation
-- AI support improves decision quality or reduces manual effort without bypassing human approval
+- users can progress tickets through a defined lifecycle and reopen resolved work
+- comments retain their author and timestamp
+- authorized support agents can assign tickets and manage workflow status
 - audit trails exist for operational accountability
 - role-based access controls prevent unauthorized actions
-- managers can view meaningful metrics about case flow and resolution
-- the product demonstrates a clear end-to-end issue-to-resolution journey
+- the web interface demonstrates the end-to-end human ticket workflow
+
+AI effectiveness, knowledge retrieval, and manager dashboards are future success measures, not acceptance criteria for this first MVP.
 
 ### Operational KPI targets for early validation
 

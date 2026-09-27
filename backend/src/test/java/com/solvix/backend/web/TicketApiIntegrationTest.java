@@ -76,7 +76,9 @@ class TicketApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"I have attached the receipt\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.comments[0]").value("I have attached the receipt"));
+                .andExpect(jsonPath("$.comments[0].text").value("I have attached the receipt"))
+                .andExpect(jsonPath("$.comments[0].author").value("test-customer"))
+                .andExpect(jsonPath("$.comments[0].createdAt").isNotEmpty());
 
         mockMvc.perform(get("/api/v1/tickets/{id}/history", id)
                         .header("Authorization", bearer(customerToken)))
@@ -93,12 +95,26 @@ class TicketApiIntegrationTest {
         String supportToken = login("test-support", SUPPORT_PASSWORD);
         String id = createTicket(customerToken);
 
+        mockMvc.perform(patch("/api/v1/tickets/{id}/status", id)
+                        .header("Authorization", bearer(supportToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"TRIAGED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("TRIAGED"));
+
         mockMvc.perform(post("/api/v1/tickets/{id}/assign", id)
                         .header("Authorization", bearer(supportToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"assignee\":\"agent-1\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assignee").value("agent-1"))
+                .andExpect(jsonPath("$.status").value("TRIAGED"));
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/status", id)
+                        .header("Authorization", bearer(supportToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ASSIGNED\"}"))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ASSIGNED"));
 
         mockMvc.perform(patch("/api/v1/tickets/{id}/status", id)
@@ -111,10 +127,11 @@ class TicketApiIntegrationTest {
         mockMvc.perform(get("/api/v1/tickets/{id}/history", id)
                         .header("Authorization", bearer(supportToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(4))
-                .andExpect(jsonPath("$[1].type").value("ASSIGNED"))
-                .andExpect(jsonPath("$[2].type").value("STATUS_CHANGED"))
-                .andExpect(jsonPath("$[3].type").value("STATUS_CHANGED"));
+                .andExpect(jsonPath("$.length()").value(5))
+                .andExpect(jsonPath("$[1].description").value("Status changed from NEW to TRIAGED"))
+                .andExpect(jsonPath("$[2].type").value("ASSIGNED"))
+                .andExpect(jsonPath("$[3].description").value("Status changed from TRIAGED to ASSIGNED"))
+                .andExpect(jsonPath("$[4].description").value("Status changed from ASSIGNED to IN_PROGRESS"));
     }
 
     @Test
@@ -155,6 +172,18 @@ class TicketApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"CLOSED\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void invalidStatusTransitionReturnsBadRequest() throws Exception {
+        String supportToken = login("test-support", SUPPORT_PASSWORD);
+        String id = createTicket(login("test-customer", CUSTOMER_PASSWORD));
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/status", id)
+                        .header("Authorization", bearer(supportToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ASSIGNED\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     private String createTicket(String token) throws Exception {

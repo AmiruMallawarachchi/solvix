@@ -24,7 +24,16 @@ Problem reported
 - Human users remain accountable for final operational decisions.
 - High-impact actions require explicit human approval.
 - The product must support a single integrated workflow rather than isolated tools.
-- The initial release focuses on the MVP workflow of ticket intake, triage, assignment, collaboration, and auditability.
+- The near-term MVP is the authenticated, human-operated ticket workflow and a small web UI.
+- AI, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration are deferred beyond the near-term MVP.
+
+### Near-term MVP requirement boundary
+
+The current MVP includes ticket intake, ownership-scoped viewing, support-agent assignment, lifecycle status changes, attributed comments, activity history, and the web screens needed to use those capabilities. The remaining requirements in this document describe the longer-term product vision and are not implied to be implemented in the MVP. In particular:
+
+- FR-003 MVP updates are limited to status and assignment operations; arbitrary ticket-field updates are deferred.
+- FR-007 and FR-011 through FR-020 are deferred beyond the near-term MVP.
+- Authentication initially supports customer and support-agent accounts; broader role administration is deferred.
 
 ---
 
@@ -74,7 +83,8 @@ Acceptance criteria:
 - Every status change creates an auditable event.
 - The ticket current state reflects the latest valid transition.
 - A historical timeline can be retrieved for the ticket.
-- Invalid transitions are rejected or explicitly flagged by business rules.
+- Valid transitions are NEW -> TRIAGED -> ASSIGNED -> IN_PROGRESS -> RESOLVED -> CLOSED.
+- A RESOLVED ticket may be reopened to IN_PROGRESS; other invalid transitions are rejected.
 
 Priority: High
 
@@ -95,7 +105,7 @@ Users with access shall be able to add comments to a ticket to support investiga
 
 Acceptance criteria:
 - Comments are stored against the correct ticket.
-- Each comment records author and timestamp.
+- Each comment stores its text, authenticated author, and timestamp.
 - Users can review ticket comment threads.
 - Unauthorized users cannot comment on restricted tickets.
 
@@ -424,20 +434,18 @@ This preserves a direct path from requirement -> implementation -> test -> evide
 
 ## 8. MVP scope summary
 
-The first implementation should prioritize the following features:
+The near-term MVP should deliver the following, in this order:
 
 1. user login and authorization
-2. ticket creation and update
-3. status tracking and history
-4. ticket assignment and ownership
-5. comments and collaboration
-6. AI triage classification
-7. evidence retrieval
-8. audit log
-9. basic dashboard
-10. role enforcement and security checks
+2. ticket creation, ownership-scoped list, and details
+3. enforced status lifecycle, including reopening resolved tickets
+4. support-agent username assignment
+5. comments with authenticated author and timestamp
+6. activity history and role/ownership enforcement
+7. a focused web UI for customer and support-agent workflows
+8. automated backend and frontend validation in CI
 
-This scope delivers the essential ticket-to-resolution workflow while keeping the project realistic and incrementally buildable.
+Deferred: AI triage and evidence retrieval, teams, dashboards, search/filtering, notifications, attachments, and administration UI. Revisit these after validating the core ticket workflow with users.
 
 ---
 

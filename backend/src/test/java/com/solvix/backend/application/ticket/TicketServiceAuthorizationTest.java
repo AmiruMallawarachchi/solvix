@@ -37,8 +37,9 @@ class TicketServiceAuthorizationTest {
 
         assertThat(service.findAll(supportAgent)).containsExactly(ticket);
         service.changeStatus(ticket.getId(), com.solvix.backend.domain.ticket.TicketStatus.TRIAGED, supportAgent);
+        service.changeStatus(ticket.getId(), com.solvix.backend.domain.ticket.TicketStatus.ASSIGNED, supportAgent);
 
-        assertThat(ticket.getStatus()).isEqualTo(com.solvix.backend.domain.ticket.TicketStatus.TRIAGED);
+        assertThat(ticket.getStatus()).isEqualTo(com.solvix.backend.domain.ticket.TicketStatus.ASSIGNED);
     }
 
     private TicketService service(Ticket ticket) {

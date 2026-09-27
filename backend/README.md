@@ -32,6 +32,7 @@ $env:SOLVIX_CUSTOMER_PASSWORD = "change-me-customer"
 $env:SOLVIX_SUPPORT_USERNAME = "support-1"
 $env:SOLVIX_SUPPORT_PASSWORD = "change-me-support"
 $env:SOLVIX_JWT_SECRET = "replace-with-at-least-32-random-characters"
+$env:SOLVIX_CORS_ALLOWED_ORIGIN = "http://localhost:3000"
 ```
 
 Then run the API:
@@ -43,7 +44,9 @@ mvn spring-boot:run
 
 The API starts on `http://localhost:8080`.
 
-On first startup, the two configured users are inserted into PostgreSQL if they do not already exist. Passwords are stored as BCrypt hashes. Log in with `POST /api/v1/auth/login`, then send the returned token as `Authorization: Bearer <token>`. Customers can access their own tickets and comments. Support agents can access all tickets and perform assignment and status changes. The ticket owner is taken from the authenticated username; clients cannot choose another `createdBy` value.
+On first startup, the two configured users are inserted into PostgreSQL if they do not already exist. Passwords are stored as BCrypt hashes. Log in with `POST /api/v1/auth/login`, then send the returned token as `Authorization: Bearer <token>`. Customers can access their own tickets and comments. Support agents can access all tickets and perform assignment and status changes. Assignment is available after triage; updating status does not assign a user. The ticket owner and comment author are taken from the authenticated username; clients cannot choose these values.
+
+The status lifecycle is `NEW -> TRIAGED -> ASSIGNED -> IN_PROGRESS -> RESOLVED -> CLOSED`. A resolved ticket may be reopened to `IN_PROGRESS`. Invalid transitions are rejected.
 
 Database structure is managed by the migrations in `src/main/resources/db/migration`. Add a new numbered migration for every schema change; do not edit an already-applied migration.
 
@@ -78,4 +81,4 @@ The login response contains a short-lived JWT. Use that token for ticket request
 
 ## Continuous integration
 
-GitHub Actions runs `mvn verify` for backend and workflow changes on pull requests and pushes to `main` or `feat/*` branches.
+GitHub Actions runs backend verification and frontend lint, type-check, and build checks for backend, frontend, and workflow changes on pull requests and pushes to `main` or `feat/*` branches.

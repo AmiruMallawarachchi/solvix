@@ -13,7 +13,7 @@ public class Ticket {
     private final String description;
     private final String createdBy;
     private final Instant createdAt;
-    private final List<String> comments = new ArrayList<>();
+    private final List<TicketComment> comments = new ArrayList<>();
     private TicketPriority priority;
     private TicketStatus status;
     private String assignee;
@@ -33,7 +33,7 @@ public class Ticket {
             String assignee,
             Instant createdAt,
             Instant updatedAt,
-            List<String> comments
+            List<TicketComment> comments
     ) {
         this.id = Objects.requireNonNull(id);
         this.title = requireText(title, "title");
@@ -45,7 +45,7 @@ public class Ticket {
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         this.updatedAt = updatedAt == null ? this.createdAt : updatedAt;
         if (comments != null) {
-            this.comments.addAll(comments.stream().map(comment -> requireText(comment, "comment")).toList());
+            this.comments.addAll(comments);
         }
     }
 
@@ -59,27 +59,47 @@ public class Ticket {
             String assignee,
             Instant createdAt,
             Instant updatedAt,
-            List<String> comments
+            List<TicketComment> comments
     ) {
         return new Ticket(id, title, description, priority, createdBy, status, assignee, createdAt, updatedAt, comments);
     }
 
     public void changeStatus(TicketStatus newStatus) {
-        this.status = Objects.requireNonNull(newStatus);
+        Objects.requireNonNull(newStatus);
+        if (status == newStatus) {
+            return;
+        }
+        if (!canTransitionTo(newStatus)) {
+            throw new IllegalArgumentException("Cannot change ticket status from " + status + " to " + newStatus);
+        }
+        this.status = newStatus;
         touch();
     }
 
     public void assignTo(String assignee) {
-        this.assignee = requireText(assignee, "assignee");
-        if (status == TicketStatus.NEW || status == TicketStatus.TRIAGED) {
-            status = TicketStatus.ASSIGNED;
+        if (status != TicketStatus.TRIAGED
+                && status != TicketStatus.ASSIGNED
+                && status != TicketStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("Ticket must be triaged before it can be assigned");
         }
+        this.assignee = requireText(assignee, "assignee");
         touch();
     }
 
-    public void addComment(String comment) {
-        comments.add(requireText(comment, "comment"));
+    public void addComment(String comment, String author) {
+        comments.add(new TicketComment(null, comment, author, Instant.now()));
         touch();
+    }
+
+    private boolean canTransitionTo(TicketStatus newStatus) {
+        return switch (status) {
+            case NEW -> newStatus == TicketStatus.TRIAGED;
+            case TRIAGED -> newStatus == TicketStatus.ASSIGNED;
+            case ASSIGNED -> newStatus == TicketStatus.IN_PROGRESS;
+            case IN_PROGRESS -> newStatus == TicketStatus.RESOLVED;
+            case RESOLVED -> newStatus == TicketStatus.CLOSED || newStatus == TicketStatus.IN_PROGRESS;
+            case CLOSED -> false;
+        };
     }
 
     private void touch() {
@@ -102,5 +122,5 @@ public class Ticket {
     public String getAssignee() { return assignee; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
-    public List<String> getComments() { return Collections.unmodifiableList(comments); }
+    public List<TicketComment> getComments() { return Collections.unmodifiableList(comments); }
 }

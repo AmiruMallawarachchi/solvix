@@ -2,6 +2,7 @@ package com.solvix.backend.web.ticket;
 
 import com.solvix.backend.application.ticket.TicketService;
 import com.solvix.backend.application.ticket.TicketActivity;
+import com.solvix.backend.domain.ticket.TicketComment;
 import com.solvix.backend.domain.ticket.Ticket;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -85,6 +86,12 @@ public class TicketController {
 
     public record AddCommentRequest(@NotBlank String comment) {}
 
+    public record CommentResponse(Long id, String text, String author, java.time.Instant createdAt) {
+        static CommentResponse from(TicketComment comment) {
+            return new CommentResponse(comment.id(), comment.text(), comment.author(), comment.createdAt());
+        }
+    }
+
     public record ActivityResponse(
             UUID id,
             UUID ticketId,
@@ -124,7 +131,7 @@ public class TicketController {
             String assignee,
             java.time.Instant createdAt,
             java.time.Instant updatedAt,
-            List<String> comments
+            List<CommentResponse> comments
     ) {
         static TicketResponse from(Ticket ticket) {
             return new TicketResponse(
@@ -137,7 +144,7 @@ public class TicketController {
                     ticket.getAssignee(),
                     ticket.getCreatedAt(),
                     ticket.getUpdatedAt(),
-                    ticket.getComments()
+                    ticket.getComments().stream().map(CommentResponse::from).toList()
             );
         }
     }

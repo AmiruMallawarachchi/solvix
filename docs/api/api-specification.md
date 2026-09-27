@@ -127,11 +127,11 @@ Support agents only. Request body:
 }
 ```
 
-Allowed status values: `NEW`, `TRIAGED`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`.
+Allowed transitions are `NEW -> TRIAGED -> ASSIGNED -> IN_PROGRESS -> RESOLVED -> CLOSED`. A resolved ticket may be reopened with `RESOLVED -> IN_PROGRESS`. Repeating the current status is a no-op. All other transitions return `400 Bad Request`.
 
 #### POST /api/v1/tickets/{id}/assign
 
-Support agents only. Request body:
+Support agents only. The ticket must be at least `TRIAGED`. Assignment sets the assignee username but does not change status; status transitions use the status endpoint. Request body:
 
 ```json
 {
@@ -148,6 +148,19 @@ Accessible to the ticket owner and support agents. Request body:
   "comment": "I have attached the receipt."
 }
 ```
+
+The returned ticket contains a `comments` array of objects:
+
+```json
+{
+  "id": 17,
+  "text": "I have attached the receipt.",
+  "author": "customer-1",
+  "createdAt": "2026-09-27T00:00:00Z"
+}
+```
+
+The author is derived from the authenticated principal. Existing comments that predate comment attribution are migrated with author `legacy` and the migration timestamp because the old records did not contain either value.
 
 #### GET /api/v1/tickets/{id}/history
 

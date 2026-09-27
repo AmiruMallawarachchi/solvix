@@ -21,8 +21,9 @@ class JpaTicketRepositoryTest {
         JpaTicketRepository repository = new JpaTicketRepository(springDataTicketRepository);
 
         Ticket ticket = new Ticket(UUID.randomUUID(), "Payment issue", "Subscription inactive", TicketPriority.HIGH, "customer-1");
+        ticket.changeStatus(com.solvix.backend.domain.ticket.TicketStatus.TRIAGED);
         ticket.assignTo("ops-agent-1");
-        ticket.addComment("Investigating billing webhook");
+        ticket.addComment("Investigating billing webhook", "ops-agent-1");
 
         Ticket saved = repository.save(ticket);
 
@@ -32,6 +33,9 @@ class JpaTicketRepositoryTest {
 
         Ticket loaded = repository.findById(saved.getId()).orElseThrow();
         assertThat(loaded.getAssignee()).isEqualTo("ops-agent-1");
-        assertThat(loaded.getComments()).containsExactly("Investigating billing webhook");
+        assertThat(loaded.getComments()).hasSize(1);
+        assertThat(loaded.getComments().get(0).text()).isEqualTo("Investigating billing webhook");
+        assertThat(loaded.getComments().get(0).author()).isEqualTo("ops-agent-1");
+        assertThat(loaded.getComments().get(0).createdAt()).isNotNull();
     }
 }

@@ -3,15 +3,15 @@ package com.solvix.backend.infrastructure.ticket;
 import com.solvix.backend.domain.ticket.Ticket;
 import com.solvix.backend.domain.ticket.TicketPriority;
 import com.solvix.backend.domain.ticket.TicketStatus;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -51,16 +51,15 @@ public class TicketEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "ticket_comments", joinColumns = @JoinColumn(name = "ticket_id"))
-    @Column(name = "comment", nullable = false)
-    private List<String> comments = new ArrayList<>();
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("createdAt ASC, id ASC")
+    private List<TicketCommentEntity> comments = new ArrayList<>();
 
     protected TicketEntity() {
     }
 
     public TicketEntity(UUID id, String title, String description, TicketPriority priority, TicketStatus status,
-                       String createdBy, String assignee, Instant createdAt, Instant updatedAt, List<String> comments) {
+                       String createdBy, String assignee, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -70,11 +69,10 @@ public class TicketEntity {
         this.assignee = assignee;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.comments = comments == null ? new ArrayList<>() : new ArrayList<>(comments);
     }
 
     public static TicketEntity fromDomain(Ticket ticket) {
-        return new TicketEntity(
+        TicketEntity entity = new TicketEntity(
                 ticket.getId(),
                 ticket.getTitle(),
                 ticket.getDescription(),
@@ -83,9 +81,12 @@ public class TicketEntity {
                 ticket.getCreatedBy(),
                 ticket.getAssignee(),
                 ticket.getCreatedAt(),
-                ticket.getUpdatedAt(),
-                ticket.getComments()
+                ticket.getUpdatedAt()
         );
+        entity.comments = ticket.getComments().stream()
+                .map(comment -> new TicketCommentEntity(comment, entity))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+        return entity;
     }
 
     public Ticket toDomain() {
@@ -99,7 +100,7 @@ public class TicketEntity {
                 assignee,
                 createdAt,
                 updatedAt,
-                comments
+                comments.stream().map(TicketCommentEntity::toDomain).toList()
         );
     }
 
@@ -175,11 +176,11 @@ public class TicketEntity {
         this.updatedAt = updatedAt;
     }
 
-    public List<String> getComments() {
+    public List<TicketCommentEntity> getComments() {
         return comments;
     }
 
-    public void setComments(List<String> comments) {
+    public void setComments(List<TicketCommentEntity> comments) {
         this.comments = comments == null ? new ArrayList<>() : new ArrayList<>(comments);
     }
 }

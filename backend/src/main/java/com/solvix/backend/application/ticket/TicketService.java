@@ -60,21 +60,16 @@ public class TicketService {
     public Ticket assign(UUID id, String assignee, TicketActor actor) {
         requireManager(actor);
         Ticket ticket = findById(id, actor);
-        TicketStatus previousStatus = ticket.getStatus();
         ticket.assignTo(assignee);
         Ticket saved = ticketRepository.save(ticket);
         record(saved, TicketActivityType.ASSIGNED, actor.username(), "Assigned to " + saved.getAssignee());
-        if (previousStatus != saved.getStatus()) {
-            record(saved, TicketActivityType.STATUS_CHANGED, actor.username(),
-                    "Status changed from " + previousStatus + " to " + saved.getStatus());
-        }
         return saved;
     }
 
     @Transactional
     public Ticket addComment(UUID id, String comment, TicketActor actor) {
         Ticket ticket = findById(id, actor);
-        ticket.addComment(comment);
+        ticket.addComment(comment, actor.username());
         Ticket saved = ticketRepository.save(ticket);
         record(saved, TicketActivityType.COMMENT_ADDED, actor.username(), "Comment added");
         return saved;

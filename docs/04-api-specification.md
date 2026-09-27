@@ -42,6 +42,8 @@ The first implemented security slice uses persistent users and stateless JWT bea
 
 The implemented ticket history endpoint returns persisted creation, status change, assignment, and comment activity, subject to the same ticket ownership rules as ticket details.
 
+The near-term MVP deliberately excludes AI, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration. The ticket lifecycle is `NEW -> TRIAGED -> ASSIGNED -> IN_PROGRESS -> RESOLVED -> CLOSED`, with `RESOLVED -> IN_PROGRESS` allowed for reopening. Assignment is to a support-agent username and is available after triage.
+
 ## Detailed contract
 
 See [api/api-specification.md](./api/api-specification.md) for the detailed request/response payload definitions and MVP endpoint flow.
