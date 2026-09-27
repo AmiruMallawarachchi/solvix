@@ -30,6 +30,7 @@ This document defines the MVP API contract for Solvix. It is the root-level refe
 - PATCH /api/v1/tickets/{ticketId}/status
 - POST /api/v1/tickets/{ticketId}/assign
 - POST /api/v1/tickets/{ticketId}/comments
+- GET /api/v1/tickets/{ticketId}/history
 
 The detailed specification distinguishes implemented behavior from planned endpoints. Pagination and filtering are not implemented yet.
 
@@ -38,6 +39,8 @@ The detailed specification distinguishes implemented behavior from planned endpo
 The API should be thin and orchestrative. Business rules belong in the backend application services, not in the HTTP layer alone. Ticket lifecycle and authorization checks must be enforced on the server, and AI actions must be logged and approval-gated when they affect state.
 
 The first implemented security slice uses persistent users and stateless JWT bearer authentication. `POST /api/v1/auth/login` returns a short-lived token, and the authenticated principal supplies the ticket owner identity, so clients cannot set `createdBy` for another user. OIDC integration remains a later deployment adapter.
+
+The implemented ticket history endpoint returns persisted creation, status change, assignment, and comment activity, subject to the same ticket ownership rules as ticket details.
 
 ## Detailed contract
 

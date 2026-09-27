@@ -4,7 +4,7 @@ Java 17 + Spring Boot 3 backend for the Solvix ticketing workflow.
 
 ## Current slice
 
-The backend now uses PostgreSQL-backed persistence through a JPA repository adapter and versioned Flyway migrations. Hibernate validates the migrated schema instead of changing it automatically. The API protects access with persistent users and short-lived JWT bearer tokens. It supports:
+The backend now uses PostgreSQL-backed persistence through JPA and versioned Flyway migrations. Hibernate validates the migrated schema instead of changing it automatically. Persistent users authenticate with short-lived JWT bearer tokens. Ticket changes are also recorded in a durable activity history. The API supports:
 
 - create a ticket
 - list tickets
@@ -12,6 +12,7 @@ The backend now uses PostgreSQL-backed persistence through a JPA repository adap
 - change ticket status
 - assign a ticket
 - add a comment
+- view ticket activity history
 
 This keeps the domain model stable while moving the application from in-memory testing to a persistent, production-like storage layer.
 
@@ -74,3 +75,7 @@ The login response contains a short-lived JWT. Use that token for ticket request
 - `infrastructure.ticket`: JPA persistence adapter and entity mapping
 - `web.ticket`: HTTP controller and request/response DTOs
 - `web.error`: consistent HTTP error mapping
+
+## Continuous integration
+
+GitHub Actions runs `mvn verify` for backend and workflow changes on pull requests and pushes to `main` or `feat/*` branches.

@@ -2,6 +2,7 @@ package com.solvix.backend.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solvix.backend.infrastructure.ticket.SpringDataTicketActivityRepository;
 import com.solvix.backend.infrastructure.ticket.SpringDataTicketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,8 +33,12 @@ class TicketApiIntegrationTest {
     @Autowired
     private SpringDataTicketRepository ticketRepository;
 
+    @Autowired
+    private SpringDataTicketActivityRepository activityRepository;
+
     @BeforeEach
     void cleanTickets() {
+        activityRepository.deleteAll();
         ticketRepository.deleteAll();
     }
 
@@ -72,6 +77,14 @@ class TicketApiIntegrationTest {
                         .content("{\"comment\":\"I have attached the receipt\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.comments[0]").value("I have attached the receipt"));
+
+        mockMvc.perform(get("/api/v1/tickets/{id}/history", id)
+                        .header("Authorization", bearer(customerToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].type").value("CREATED"))
+                .andExpect(jsonPath("$[0].actor").value("test-customer"))
+                .andExpect(jsonPath("$[1].type").value("COMMENT_ADDED"));
     }
 
     @Test
@@ -94,6 +107,14 @@ class TicketApiIntegrationTest {
                         .content("{\"status\":\"IN_PROGRESS\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+        mockMvc.perform(get("/api/v1/tickets/{id}/history", id)
+                        .header("Authorization", bearer(supportToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(4))
+                .andExpect(jsonPath("$[1].type").value("ASSIGNED"))
+                .andExpect(jsonPath("$[2].type").value("STATUS_CHANGED"))
+                .andExpect(jsonPath("$[3].type").value("STATUS_CHANGED"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.solvix.backend.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solvix.backend.infrastructure.ticket.SpringDataTicketActivityRepository;
 import com.solvix.backend.infrastructure.ticket.SpringDataTicketRepository;
 import com.solvix.backend.security.UserEntity;
 import com.solvix.backend.security.UserRepository;
@@ -37,6 +38,9 @@ class SecurityIntegrationTest {
     private SpringDataTicketRepository ticketRepository;
 
     @Autowired
+    private SpringDataTicketActivityRepository activityRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -44,6 +48,7 @@ class SecurityIntegrationTest {
 
     @BeforeEach
     void cleanTickets() {
+        activityRepository.deleteAll();
         ticketRepository.deleteAll();
         if (userRepository.findByUsername("test-customer-2").isEmpty()) {
             userRepository.save(new UserEntity(
@@ -103,6 +108,10 @@ class SecurityIntegrationTest {
         String ticketId = ticketRepository.findAll().get(0).getId().toString();
 
         mockMvc.perform(get("/api/v1/tickets/{id}", ticketId)
+                        .header("Authorization", bearer(otherCustomerToken)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/tickets/{id}/history", ticketId)
                         .header("Authorization", bearer(otherCustomerToken)))
                 .andExpect(status().isForbidden());
     }

@@ -1,6 +1,7 @@
 package com.solvix.backend.web.ticket;
 
 import com.solvix.backend.application.ticket.TicketService;
+import com.solvix.backend.application.ticket.TicketActivity;
 import com.solvix.backend.domain.ticket.Ticket;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -42,6 +43,13 @@ public class TicketController {
         return TicketResponse.from(ticketService.findById(id, actor(authentication)));
     }
 
+    @GetMapping("/{id}/history")
+    public List<ActivityResponse> findHistory(@PathVariable UUID id, Authentication authentication) {
+        return ticketService.findHistory(id, actor(authentication)).stream()
+                .map(ActivityResponse::from)
+                .toList();
+    }
+
     @PatchMapping("/{id}/status")
     public TicketResponse changeStatus(
             @PathVariable UUID id,
@@ -76,6 +84,26 @@ public class TicketController {
     public record AssignTicketRequest(@NotBlank String assignee) {}
 
     public record AddCommentRequest(@NotBlank String comment) {}
+
+    public record ActivityResponse(
+            UUID id,
+            UUID ticketId,
+            String type,
+            String actor,
+            String description,
+            java.time.Instant createdAt
+    ) {
+        static ActivityResponse from(TicketActivity activity) {
+            return new ActivityResponse(
+                    activity.id(),
+                    activity.ticketId(),
+                    activity.type().name(),
+                    activity.actor(),
+                    activity.description(),
+                    activity.createdAt()
+            );
+        }
+    }
 
     private static com.solvix.backend.application.ticket.TicketActor actor(Authentication authentication) {
         return new com.solvix.backend.application.ticket.TicketActor(

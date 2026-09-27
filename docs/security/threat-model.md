@@ -59,6 +59,7 @@ The current ticket rules are:
 - customers can add comments to their own tickets
 - support agents can view all tickets, assign tickets, change status, and comment
 - the backend derives `createdBy` from the authenticated principal rather than trusting request data
+- ticket creation, status changes, assignments, and comments are recorded with actor and timestamp in persistent ticket activity history
 
 Examples:
 - a support agent may view assigned tickets

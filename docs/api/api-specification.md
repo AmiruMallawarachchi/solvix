@@ -149,6 +149,27 @@ Accessible to the ticket owner and support agents. Request body:
 }
 ```
 
+#### GET /api/v1/tickets/{id}/history
+
+Returns the ticket's persisted activity in chronological order. Customers can view history for their own tickets; support agents can view any ticket's history.
+
+Response (`200 OK`):
+
+```json
+[
+  {
+    "id": "activity-uuid",
+    "ticketId": "ticket-uuid",
+    "type": "CREATED",
+    "actor": "customer-1",
+    "description": "Ticket created",
+    "createdAt": "2026-09-27T00:00:00Z"
+  }
+]
+```
+
+Activity types currently include `CREATED`, `STATUS_CHANGED`, `ASSIGNED`, and `COMMENT_ADDED`. Comment text itself is not copied into the activity description.
+
 Ticket mutations and reads return the ticket object directly. Invalid request bodies return `400 Bad Request`; unauthorized users receive `401 Unauthorized` when unauthenticated and `403 Forbidden` when authenticated without permission.
 
 ---
@@ -355,30 +376,9 @@ Returns comment history for the ticket.
 
 ---
 
-## 8. Planned ticket status history endpoints
+## 8. Planned status transition details
 
-### GET /api/v1/tickets/{ticketId}/history
-
-Returns the status timeline and event history.
-
-Example response:
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "hist_1",
-      "previousStatus": "new",
-      "newStatus": "triaged",
-      "changedBy": "usr_123",
-      "reason": "Initial categorization",
-      "createdAt": "2026-01-01T10:02:00Z"
-    }
-  ],
-  "error": null
-}
-```
+The implemented history endpoint records ticket creation, status changes, assignments, and comment additions. A richer status transition history with explicit previous/new status fields and reasons may be added later if required.
 
 ---
 
