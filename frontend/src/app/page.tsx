@@ -149,6 +149,7 @@ export default function Home() {
           ? next
           : (result[0]?.id ?? null);
       });
+      return result;
     },
     [],
   );
@@ -175,7 +176,10 @@ export default function Home() {
         }),
       });
       setSession(auth);
-      await refreshTickets(auth.token);
+      const loadedTickets = await refreshTickets(auth.token);
+      if (loadedTickets.length > 0) {
+        await loadHistory(loadedTickets[0].id, auth.token);
+      }
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) {
         setError("Invalid username or password.");
