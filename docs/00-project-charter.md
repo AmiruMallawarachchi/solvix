@@ -139,7 +139,9 @@ The first usable release is deliberately limited to the human-operated ticket wo
 6. review the ticket's activity history
 7. use a small web interface to complete these workflows
 
-AI triage, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration remain part of the longer-term product vision but are deferred until the core workflow is usable.
+AI triage, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration are deferred from the first release and belong to later stages of the product vision.
+
+The MVP is the first release of Solvix, not the complete product. The approved direction is to extend it through the staged work in [07-production-readiness-roadmap.md](./07-production-readiness-roadmap.md). The first AWS release is planned as an invite-only pilot; the roadmap's security, backup/restore, monitoring, and operational gates must be satisfied before real customer data is used.
 
 ---
 

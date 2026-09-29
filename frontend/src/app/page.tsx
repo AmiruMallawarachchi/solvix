@@ -1,8 +1,15 @@
 "use client";
 
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import {
+  type AuthSession,
+  beginCognitoSignIn,
+  completeCognitoSignIn,
+  redirectToCognitoSignOut,
+} from "@/lib/cognito-auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE ?? "local";
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 type TicketStatus = "NEW" | "TRIAGED" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
@@ -35,12 +42,6 @@ type Activity = {
   actor: string;
   description: string;
   createdAt: string;
-};
-
-type AuthSession = {
-  token: string;
-  username: string;
-  role: string;
 };
 
 class ApiError extends Error {
@@ -120,6 +121,8 @@ export default function Home() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const isLocalAuth = AUTH_MODE === "local";
+  const isCognitoAuth = AUTH_MODE === "cognito";
 
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedId) ?? null;
   const isSupport = session?.role === "SUPPORT_AGENT";
@@ -161,6 +164,33 @@ export default function Home() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!isCognitoAuth) return;
+
+    let active = true;
+    void (async () => {
+      setBusy(true);
+      try {
+        const auth = await completeCognitoSignIn();
+        if (!auth || !active) return;
+
+        setSession(auth);
+        const loadedTickets = await refreshTickets(auth.token);
+        if (loadedTickets.length > 0) {
+          await loadHistory(loadedTickets[0].id, auth.token);
+        }
+      } catch (reason) {
+        if (active) handleFailure(reason);
+      } finally {
+        if (active) setBusy(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [handleFailure, isCognitoAuth, loadHistory, refreshTickets]);
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -295,6 +325,13 @@ export default function Home() {
     setSelectedId(null);
     setActivities([]);
     setError("");
+    if (isCognitoAuth) {
+      try {
+        redirectToCognitoSignOut();
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Could not sign out.");
+      }
+    }
   }
 
   if (!session) {
@@ -305,21 +342,43 @@ export default function Home() {
           <p className="eyebrow">OPERATIONS WORKSPACE</p>
           <h1>Welcome to Solvix</h1>
           <p className="muted">Sign in to manage your support workflow.</p>
-          <form className="form-stack" onSubmit={submitLogin}>
-            <label>
-              Username
-              <input name="username" autoComplete="username" required />
-            </label>
-            <label>
-              Password
-              <input name="password" type="password" autoComplete="current-password" required />
-            </label>
-            {error && <p className="error-message" role="alert">{error}</p>}
-            <button className="primary-button" disabled={busy}>
-              {busy ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-          <p className="footnote">Your session stays in memory and ends when you sign out or refresh.</p>
+          {isLocalAuth ? (
+            <form className="form-stack" onSubmit={submitLogin}>
+              <label>
+                Username
+                <input name="username" autoComplete="username" required />
+              </label>
+              <label>
+                Password
+                <input name="password" type="password" autoComplete="current-password" required />
+              </label>
+              {error && <p className="error-message" role="alert">{error}</p>}
+              <button className="primary-button" disabled={busy}>
+                {busy ? "Signing in..." : "Sign in"}
+              </button>
+            </form>
+          ) : isCognitoAuth ? (
+            <div className="form-stack">
+              {error && <p className="error-message" role="alert">{error}</p>}
+              <button
+                className="primary-button"
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true);
+                  setError("");
+                  void beginCognitoSignIn().catch((reason: unknown) => {
+                    setBusy(false);
+                    setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
+                  });
+                }}
+              >
+                {busy ? "Checking sign-in..." : "Continue with Cognito"}
+              </button>
+            </div>
+          ) : (
+            <p className="error-message" role="alert">Unsupported authentication mode: {AUTH_MODE}.</p>
+          )}
+          <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
         </section>
       </main>
     );

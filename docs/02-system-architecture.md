@@ -477,3 +477,9 @@ These artifacts will turn the architecture from a high-level concept into an eng
 Solvix should be designed as a structured business workflow platform with AI integrated as a governance-aware support layer. The architecture makes the ticketing system the source of truth, keeps human accountability in the loop, and ensures that AI operates in a controlled, measurable, and auditable environment.
 
 This is the kind of architecture that demonstrates real software engineering discipline and makes the project credible as both a product and an AI-enabled system.
+
+## 15. Production direction and delivery status
+
+The current implementation is a Spring Boot modular monolith, a Next.js web client, and PostgreSQL persistence. The diagrams above describe the broader target architecture; the queue, AI workflow, knowledge, teams, and notification integrations are not all implemented yet.
+
+The next delivery stages preserve the modular monolith and introduce managed AWS services only when the corresponding product capability is ready. The initial deployment target is a cost-conscious, single-organization invite-only pilot in `ap-south-1`, with Cognito for production identity, a single-AZ PostgreSQL database with backups, and Bedrock AI added behind asynchronous, human-approved workflows. See the [production readiness roadmap](./07-production-readiness-roadmap.md) for proposed services, trade-offs, and required release gates. Confirm current AWS service availability and pricing before provisioning; this document does not imply that the system has already been deployed.
