@@ -1,9 +1,9 @@
 package com.solvix.backend.web;
 
-import com.solvix.backend.security.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
@@ -36,7 +36,7 @@ class ProductionSecurityIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private UserRepository userRepository;
+    private ApplicationContext applicationContext;
 
     @Autowired
     @Qualifier("corsConfigurationSource")
@@ -52,7 +52,7 @@ class ProductionSecurityIntegrationTest {
                         .content("{\"username\":\"customer-1\",\"password\":\"change-me\"}"))
                 .andExpect(status().isUnauthorized());
 
-        assertThat(userRepository.count()).isZero();
+        assertThat(applicationContext.containsBean("userDataInitializer")).isFalse();
     }
 
     @Test
