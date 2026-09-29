@@ -39,3 +39,5 @@ npm run dev
 ```
 
 The UI is available at `http://localhost:3000`; the API is at `http://localhost:8080`.
+
+To run PostgreSQL and the API in containers instead, copy `.env.example` to `.env` and run `docker compose up --build -d`. PostgreSQL is exposed on host port `5433`; the API remains on `8080`. The example credentials are for local development only. Start the frontend as shown above.

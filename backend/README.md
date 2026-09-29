@@ -18,6 +18,18 @@ This keeps the domain model stable while moving the application from in-memory t
 
 ## Run locally
 
+### Run PostgreSQL and the API with Docker Compose
+
+From the repository root, copy `.env.example` to `.env` and run:
+
+```powershell
+docker compose up --build -d
+```
+
+This starts PostgreSQL on host port `5433` and the API on port `8080`. The API waits for PostgreSQL to pass its readiness check. The example credentials are development-only; set private values in `.env` and never use these defaults in a deployed environment. Stop the services with `docker compose down`; the database volume is retained.
+
+### Run PostgreSQL in Docker and the API with Maven
+
 Start the database:
 
 ```bash
