@@ -1,6 +1,7 @@
 # Java / Maven
 target/
 *.class
+.tools/
 
 # Node
 node_modules/
