@@ -6,11 +6,38 @@ services:
     environment:
       POSTGRES_DB: solvix
       POSTGRES_USER: solvix
-      POSTGRES_PASSWORD: solvix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solvix}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - solvix_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: solvix-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/solvix
+      SPRING_DATASOURCE_USERNAME: solvix
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-solvix}
+      SOLVIX_JWT_SECRET: ${SOLVIX_JWT_SECRET:-local-development-secret-change-before-use-123456}
+      SOLVIX_CUSTOMER_USERNAME: ${SOLVIX_CUSTOMER_USERNAME:-customer-1}
+      SOLVIX_CUSTOMER_PASSWORD: ${SOLVIX_CUSTOMER_PASSWORD:-local-customer-password}
+      SOLVIX_SUPPORT_USERNAME: ${SOLVIX_SUPPORT_USERNAME:-support-1}
+      SOLVIX_SUPPORT_PASSWORD: ${SOLVIX_SUPPORT_PASSWORD:-local-support-password}
+      SOLVIX_CORS_ALLOWED_ORIGIN: ${SOLVIX_CORS_ALLOWED_ORIGIN:-http://localhost:3000}
 
 volumes:
   solvix_pg_data:

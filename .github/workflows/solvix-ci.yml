@@ -5,6 +5,8 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
+      - "docker-compose.yml"
+      - ".env.example"
       - ".github/workflows/**"
   push:
     branches:
@@ -13,6 +15,8 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
+      - "docker-compose.yml"
+      - ".env.example"
       - ".github/workflows/**"
 
 permissions:
@@ -35,6 +39,12 @@ jobs:
 
       - name: Run Maven verification
         run: mvn --batch-mode --no-transfer-progress -f backend/pom.xml verify
+
+      - name: Validate local Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build backend container image
+        run: docker build --file backend/Dockerfile --tag solvix-backend:ci backend
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
