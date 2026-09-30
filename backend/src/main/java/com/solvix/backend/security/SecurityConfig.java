@@ -1,6 +1,7 @@
 package com.solvix.backend.security;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
+@Profile("!production")
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 

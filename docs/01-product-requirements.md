@@ -35,6 +35,8 @@ The current MVP includes ticket intake, ownership-scoped viewing, support-agent 
 - FR-007 and FR-011 through FR-020 are deferred beyond the near-term MVP.
 - Authentication initially supports customer and support-agent accounts; broader role administration is deferred.
 
+The broader product is intended to be delivered in stages after the MVP rather than treated as out of scope forever. See the [production readiness roadmap](./07-production-readiness-roadmap.md) for the planned sequence, AWS deployment constraints, and release gates. Those roadmap items remain planned until their acceptance criteria are implemented and verified.
+
 ---
 
 ## 3. Functional requirements

@@ -6,7 +6,7 @@ This document explains the initial AI design for Solvix and defines how the AI s
 
 ## Delivery status
 
-AI triage and evidence retrieval are part of the longer-term product vision, but are explicitly deferred from the near-term MVP. The first release focuses on making the human ticket workflow usable end-to-end. Do not add AI jobs, providers, queues, or approval workflows until that workflow is complete and validated.
+AI triage and evidence retrieval are part of the longer-term product vision and were intentionally deferred from the near-term MVP. The human ticket workflow now provides the foundation for a later AI stage, but AI is not yet implemented. Follow the [production readiness roadmap](./07-production-readiness-roadmap.md): add AI only after the production identity, permission model, and operational foundation are ready.
 
 ## AI design principles
 

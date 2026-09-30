@@ -10,6 +10,7 @@ AI-assisted enterprise operations platform — ticketing + agentic AI resolution
 - [API specification](./docs/04-api-specification.md)
 - [Security and threat model](./docs/05-security-threat-model.md)
 - [AI workflow design](./docs/06-ai-workflow-design.md)
+- [Production readiness roadmap](./docs/07-production-readiness-roadmap.md)
 
 ### Documentation index
 
@@ -41,3 +42,5 @@ npm run dev
 The UI is available at `http://localhost:3000`; the API is at `http://localhost:8080`.
 
 To run PostgreSQL and the API in containers instead, copy `.env.example` to `.env` and run `docker compose up --build -d`. PostgreSQL is exposed on host port `5433`; the API remains on `8080`. The example credentials are for local development only. Start the frontend as shown above.
+
+The frontend defaults to local username/password login. Copy [frontend/.env.example](./frontend/.env.example) to `frontend/.env.local` to customize its API URL. Cognito mode is for a provisioned production user pool; required app-client and API settings are documented in the [production readiness roadmap](./docs/07-production-readiness-roadmap.md).
