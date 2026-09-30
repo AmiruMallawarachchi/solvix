@@ -1,6 +1,14 @@
 # solvix
 AI-assisted enterprise operations platform — ticketing + agentic AI resolution layer.
 
+> **Portfolio demo:** Public deployment is being prepared. No live demo URL is published yet; we will add it here after the public-demo safety checks and deployment smoke tests pass. The demo goal is a low-traffic, free-plan deployment, not an always-on production service.
+
+## Project highlights
+
+- Spring Boot 3 / Java 17 API, Next.js UI, PostgreSQL, Flyway migrations, Docker, and CI.
+- Cognito support in the production authentication profile; local login remains the default development flow.
+- Staged [AWS production architecture](./docs/07-production-readiness-roadmap.md), documented separately from the low-cost portfolio demo.
+
 ## Documentation
 
 - [Project charter](./docs/00-project-charter.md)
@@ -11,6 +19,7 @@ AI-assisted enterprise operations platform — ticketing + agentic AI resolution
 - [Security and threat model](./docs/05-security-threat-model.md)
 - [AI workflow design](./docs/06-ai-workflow-design.md)
 - [Production readiness roadmap](./docs/07-production-readiness-roadmap.md)
+- [Portfolio demo deployment plan](./docs/08-portfolio-demo-deployment.md)
 
 ### Documentation index
 

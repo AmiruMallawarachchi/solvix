@@ -4,7 +4,7 @@
 
 Solvix has an MVP ticket workflow: a Spring Boot API, a Next.js user interface, PostgreSQL persistence and migrations, customer ownership checks, support-agent operations, ticket comments, lifecycle history, and automated backend/frontend checks.
 
-The MVP is a foundation, not the complete product and not yet a production launch. This roadmap takes Solvix toward the wider product described in the charter through staged releases. The implementation should remain a modular monolith until measured needs justify splitting services.
+The MVP is a foundation, not the complete product and not yet a production launch. The immediate deployment objective is a low-traffic, interactive portfolio demo under free-plan limits; it does not require an always-on AWS environment. See the [portfolio demo deployment plan](./08-portfolio-demo-deployment.md). This production roadmap remains the separately staged path toward the wider product described in the charter. The implementation should remain a modular monolith until measured needs justify splitting services.
 
 ## Decisions for the first production releases
 
@@ -20,7 +20,7 @@ The MVP is a foundation, not the complete product and not yet a production launc
 
 ## Delivery stages and release gates
 
-Each stage is a separately reviewable release. The first secure ticket workflow may be deployed as an invite-only beta before all later product features are ready.
+Each stage is a separately reviewable release. The portfolio demo is a separate, synthetic-data demonstration and is not a production release or customer pilot. The first secure ticket workflow may be deployed as an invite-only beta before all later product features are ready.
 
 ### 1. Product contract and measurable launch gates
 
