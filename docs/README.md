@@ -11,6 +11,7 @@ This folder is the main engineering documentation set for the Solvix project.
 - [04-api-specification.md](./04-api-specification.md)
 - [05-security-threat-model.md](./05-security-threat-model.md)
 - [06-ai-workflow-design.md](./06-ai-workflow-design.md)
+- [07-production-readiness-roadmap.md](./07-production-readiness-roadmap.md)
 
 ## Supporting folders
 

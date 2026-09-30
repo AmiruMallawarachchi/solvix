@@ -38,7 +38,7 @@ Secrets, tokens, and internal configuration should not be committed to source co
 
 ### 3.1 Identity and access
 
-The current backend security slice uses stateless JWT bearer authentication backed by users stored in PostgreSQL. Bootstrap credentials are supplied only through environment variables on first startup, and passwords are stored as BCrypt hashes. Tokens expire after 15 minutes. Production deployment can later replace the login boundary with the organization’s OIDC provider without changing ticket authorization rules.
+The default local profile uses stateless JWT bearer authentication backed by users stored in PostgreSQL. Bootstrap credentials are supplied only through environment variables on first startup, and passwords are stored as BCrypt hashes. Tokens expire after 15 minutes. The production profile now validates Cognito access-token signatures, issuer, token use, and app-client ID; the Next.js client supports Cognito authorization-code flow with PKCE. Ticket authorization remains backend-enforced. This integration has automated tests but has not been configured with a real user pool or deployed. See the [production readiness roadmap](../07-production-readiness-roadmap.md).
 
 ### 3.2 Authorization model
 
