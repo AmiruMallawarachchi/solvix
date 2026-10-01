@@ -1,7 +1,11 @@
 # solvix
 AI-assisted enterprise operations platform — ticketing + agentic AI resolution layer.
 
-> **Portfolio demo:** Public deployment is being prepared. No live demo URL is published yet; we will add it here after the public-demo safety checks and deployment smoke tests pass. The demo goal is a low-traffic, free-plan deployment, not an always-on production service.
+> **Live demo:** [Open Solvix](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)
+>
+> The portfolio demo runs on Vercel, Render, and Neon free-plan services. It uses synthetic data and may have a cold start after inactivity; it is not an always-on production service.
+
+**Demo account:** `solvix-demo-user` / `SolvixDemo-2026!Ticket`
 
 ## Project highlights
 

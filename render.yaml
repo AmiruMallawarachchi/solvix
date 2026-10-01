@@ -8,9 +8,9 @@ services:
     autoDeploy: true
     envVars:
       - key: SPRING_DATASOURCE_URL
-        sync: false
+        value: jdbc:postgresql://ep-royal-dust-b3hsoagp-pooler.c-4.ap-southeast-1.aws.neon.tech/PostgreSQL?sslmode=require
       - key: SPRING_DATASOURCE_USERNAME
-        sync: false
+        value: PostgreSQL_owner
       - key: SPRING_DATASOURCE_PASSWORD
         sync: false
       - key: SOLVIX_CORS_ALLOWED_ORIGIN
