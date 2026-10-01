@@ -1,19 +1,90 @@
-# solvix
-AI-assisted enterprise operations platform — ticketing + agentic AI resolution layer.
+# Solvix
 
-> **Live demo:** [Open Solvix](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)
->
-> The portfolio demo runs on Vercel, Render, and Neon free-plan services. It uses synthetic data and may have a cold start after inactivity; it is not an always-on production service.
+**AI-assisted support operations platform for turning customer requests into
+clear, accountable work.**
 
-**Demo account:** `solvix-demo-user` / `SolvixDemo-2026!Ticket`
+[![Live demo](https://img.shields.io/badge/Live%20demo-Try%20Solvix-18765d?style=for-the-badge)](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)
+[![Frontend](https://img.shields.io/badge/frontend-Next.js-black)](./frontend)
+[![Backend](https://img.shields.io/badge/backend-Spring%20Boot%203-6db33f)](./backend)
+[![Database](https://img.shields.io/badge/database-PostgreSQL-336791)](./backend/src/main/resources/db/migration)
 
-## Project highlights
+## Try the live demo
 
-- Spring Boot 3 / Java 17 API, Next.js UI, PostgreSQL, Flyway migrations, Docker, and CI.
-- Cognito support in the production authentication profile; local login remains the default development flow.
-- Staged [AWS production architecture](./docs/07-production-readiness-roadmap.md), documented separately from the low-cost portfolio demo.
+**[Open Solvix →](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)**
 
-## Documentation
+The public demo is a synthetic recruiter sandbox. It is deployed as:
+
+```text
+Browser
+  ↓
+Vercel · Next.js frontend
+  ↓
+Render · Spring Boot API
+  ↓
+Neon · PostgreSQL
+```
+
+Use the pre-filled demo account:
+
+```text
+Username: solvix-demo-user
+Password: SolvixDemo-2026!Ticket
+```
+
+Once signed in, try the complete workflow:
+
+1. Create a ticket with a priority.
+2. Select the ticket and add a comment.
+3. Review the activity history.
+4. Move the ticket through its governed lifecycle.
+
+The demo uses synthetic data only. Render's free instance may sleep after
+inactivity, so the first request can take a few seconds.
+
+## Why this project exists
+
+Solvix demonstrates how a small operations product can be designed as a
+maintainable system rather than a collection of screens. The current slice
+focuses on the workflow fundamentals:
+
+- Customer and support-agent roles with JWT authentication.
+- Ticket creation, ownership, priorities, assignments, and status transitions.
+- Durable comments and an activity history for auditability.
+- PostgreSQL persistence managed by Flyway migrations.
+- A responsive Next.js workspace designed for fast triage.
+- Dockerized backend deployment with provider-managed configuration.
+
+## Engineering highlights
+
+| Area | Implementation |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript, responsive CSS |
+| API | Spring Boot 3.4, Java 17, REST controllers |
+| Persistence | PostgreSQL, Spring Data JPA, Flyway |
+| Security | BCrypt passwords, short-lived JWTs, CORS allow-list |
+| Delivery | Docker, Render Blueprint, Vercel, Neon |
+| Quality | Backend tests, frontend lint/type-check/build, GitHub Actions |
+
+The backend enforces the ticket lifecycle:
+
+```text
+NEW → TRIAGED → ASSIGNED → IN_PROGRESS → RESOLVED → CLOSED
+```
+
+Invalid transitions are rejected by the domain layer, and ownership is taken
+from the authenticated identity rather than trusted client input.
+
+## Repository guide
+
+```text
+frontend/   Next.js recruiter-facing workspace
+backend/    Spring Boot API and Flyway migrations
+docs/       Charter, requirements, architecture, security, and deployment docs
+infra/      AWS production architecture and infrastructure experiments
+render.yaml Render Blueprint for the public backend demo
+```
+
+Start with:
 
 - [Project charter](./docs/00-project-charter.md)
 - [Product requirements](./docs/01-product-requirements.md)
@@ -23,28 +94,26 @@ AI-assisted enterprise operations platform — ticketing + agentic AI resolution
 - [Security and threat model](./docs/05-security-threat-model.md)
 - [AI workflow design](./docs/06-ai-workflow-design.md)
 - [Production readiness roadmap](./docs/07-production-readiness-roadmap.md)
-- [Portfolio demo deployment plan](./docs/08-portfolio-demo-deployment.md)
+- [Portfolio demo deployment](./docs/08-portfolio-demo-deployment.md)
 
-### Documentation index
+## Run locally
 
-- [docs/](./docs)
+Prerequisites: Java 17, Maven, Node.js, npm, and Docker Desktop.
 
-## Local backend setup
-
-The backend persists tickets in PostgreSQL, with a lightweight Docker Compose setup for local development. Configure the required bootstrap credentials and JWT signing secret as described in [backend setup](./backend/README.md).
+Start PostgreSQL:
 
 ```powershell
 docker compose up -d postgres
 ```
 
-Start the backend in one PowerShell window:
+Start the API:
 
 ```powershell
 cd backend
 mvn spring-boot:run
 ```
 
-Then start the web app in another window:
+Start the frontend in a second terminal:
 
 ```powershell
 cd frontend
@@ -52,8 +121,44 @@ npm ci
 npm run dev
 ```
 
-The UI is available at `http://localhost:3000`; the API is at `http://localhost:8080`.
+The local UI runs at `http://localhost:3000` and the API at
+`http://localhost:8080`. Copy
+[frontend/.env.example](./frontend/.env.example) to
+`frontend/.env.local` when you need to change the API URL or authentication
+mode.
 
-To run PostgreSQL and the API in containers instead, copy `.env.example` to `.env` and run `docker compose up --build -d`. PostgreSQL is exposed on host port `5433`; the API remains on `8080`. The example credentials are for local development only. Start the frontend as shown above.
+To run the API and PostgreSQL together in containers, copy `.env.example` to
+`.env` and run:
 
-The frontend defaults to local username/password login. Copy [frontend/.env.example](./frontend/.env.example) to `frontend/.env.local` to customize its API URL. Cognito mode is for a provisioned production user pool; required app-client and API settings are documented in the [production readiness roadmap](./docs/07-production-readiness-roadmap.md).
+```powershell
+docker compose up --build -d
+```
+
+## Verification
+
+Backend tests:
+
+```powershell
+cd backend
+mvn test
+```
+
+Frontend checks:
+
+```powershell
+cd frontend
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## Deployment note
+
+The live portfolio deployment is intentionally separate from the documented
+AWS production target. The demo prioritizes a real, low-cost URL a recruiter
+can open, while the repository also documents an AWS path using Cognito,
+ECS/Fargate, RDS, Secrets Manager, CloudWatch, and CDK. The AWS architecture
+is not represented as continuously running infrastructure.
+
+This repository is a portfolio project, not a service for real customer
+support requests. Do not place sensitive or personal data in the public demo.

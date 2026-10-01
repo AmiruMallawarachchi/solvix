@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Solvix | Ticket workspace",
-  description: "A focused workspace for managing support tickets.",
+  title: "Solvix | Support operations demo",
+  description: "Explore Solvix, a recruiter-friendly support ticket workflow built with Next.js and Spring Boot.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

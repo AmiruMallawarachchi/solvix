@@ -337,49 +337,70 @@ export default function Home() {
   if (!session) {
     return (
       <main className="login-shell">
-        <section className="login-card">
-          <div className="brand-mark">S</div>
-          <p className="eyebrow">OPERATIONS WORKSPACE</p>
-          <h1>Welcome to Solvix</h1>
-          <p className="muted">Sign in to manage your support workflow.</p>
-          {isLocalAuth ? (
-            <form className="form-stack" onSubmit={submitLogin}>
-              <label>
-                Username
-                <input name="username" autoComplete="username" required />
-              </label>
-              <label>
-                Password
-                <input name="password" type="password" autoComplete="current-password" required />
-              </label>
-              {error && <p className="error-message" role="alert">{error}</p>}
-              <button className="primary-button" disabled={busy}>
-                {busy ? "Signing in..." : "Sign in"}
-              </button>
-            </form>
-          ) : isCognitoAuth ? (
-            <div className="form-stack">
-              {error && <p className="error-message" role="alert">{error}</p>}
-              <button
-                className="primary-button"
-                disabled={busy}
-                onClick={() => {
-                  setBusy(true);
-                  setError("");
-                  void beginCognitoSignIn().catch((reason: unknown) => {
-                    setBusy(false);
-                    setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
-                  });
-                }}
-              >
-                {busy ? "Checking sign-in..." : "Continue with Cognito"}
-              </button>
+        <div className="login-layout">
+          <section className="login-intro">
+            <div className="brand-mark">S</div>
+            <p className="eyebrow">PORTFOLIO DEMO · SUPPORT OPERATIONS</p>
+            <h1>A calmer way to move support work forward.</h1>
+            <p className="login-lede">
+              Solvix is a focused ticket workspace that connects customer requests,
+              support workflows, and an auditable activity trail.
+            </p>
+            <div className="feature-list">
+              <span><strong>01</strong> Create and prioritize requests</span>
+              <span><strong>02</strong> Collaborate through comments</span>
+              <span><strong>03</strong> Progress work with governed statuses</span>
             </div>
-          ) : (
-            <p className="error-message" role="alert">Unsupported authentication mode: {AUTH_MODE}.</p>
-          )}
-          <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
-        </section>
+            <p className="stack-note">Next.js · Spring Boot · PostgreSQL · Docker</p>
+          </section>
+
+          <section className="login-card">
+            <p className="eyebrow">LIVE RECRUITER SANDBOX</p>
+            <h2>Explore the workspace</h2>
+            <p className="muted">Use the synthetic demo account to try the complete flow.</p>
+            {isLocalAuth ? (
+              <form className="form-stack" onSubmit={submitLogin}>
+                <label>
+                  Username
+                  <input name="username" autoComplete="username" defaultValue="solvix-demo-user" required />
+                </label>
+                <label>
+                  Password
+                  <input name="password" type="password" autoComplete="current-password" defaultValue="SolvixDemo-2026!Ticket" required />
+                </label>
+                {error && <p className="error-message" role="alert">{error}</p>}
+                <button className="primary-button" disabled={busy}>
+                  {busy ? "Signing in..." : "Enter the demo"}
+                </button>
+              </form>
+            ) : isCognitoAuth ? (
+              <div className="form-stack">
+                {error && <p className="error-message" role="alert">{error}</p>}
+                <button
+                  className="primary-button"
+                  disabled={busy}
+                  onClick={() => {
+                    setBusy(true);
+                    setError("");
+                    void beginCognitoSignIn().catch((reason: unknown) => {
+                      setBusy(false);
+                      setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
+                    });
+                  }}
+                >
+                  {busy ? "Checking sign-in..." : "Continue with Cognito"}
+                </button>
+              </div>
+            ) : (
+              <p className="error-message" role="alert">Unsupported authentication mode: {AUTH_MODE}.</p>
+            )}
+            <div className="demo-note">
+              <strong>Synthetic data only</strong>
+              <span>Free-tier services may take a few seconds to wake up.</span>
+            </div>
+            <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
+          </section>
+        </div>
       </main>
     );
   }
