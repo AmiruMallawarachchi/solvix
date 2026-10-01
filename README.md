@@ -1,5 +1,9 @@
 # Solvix
 
+<p align="center">
+  <img src="./frontend/public/solvix-mark.svg" alt="Solvix radial signal logo" width="76" />
+</p>
+
 **AI-assisted support operations platform for turning customer requests into
 clear, accountable work.**
 

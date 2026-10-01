@@ -7,6 +7,7 @@ import {
   completeCognitoSignIn,
   redirectToCognitoSignOut,
 } from "@/lib/cognito-auth";
+import { SolvixMark } from "@/components/solvix-mark";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE ?? "local";
@@ -339,7 +340,7 @@ export default function Home() {
       <main className="login-shell">
         <div className="login-layout">
           <section className="login-intro">
-            <div className="brand-mark">S</div>
+            <div className="brand-mark"><SolvixMark /></div>
             <p className="eyebrow">PORTFOLIO DEMO · SUPPORT OPERATIONS</p>
             <h1>A calmer way to move support work forward.</h1>
             <p className="login-lede">
@@ -409,7 +410,7 @@ export default function Home() {
     <main className="workspace">
       <header className="topbar">
         <div className="brand-lockup">
-          <div className="brand-mark small">S</div>
+          <div className="brand-mark small"><SolvixMark /></div>
           <span>solvix</span>
           <span className="workspace-tag">TICKETS</span>
         </div>
