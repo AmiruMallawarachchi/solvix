@@ -7,23 +7,24 @@
 **AI-assisted support operations platform for turning customer requests into
 clear, accountable work.**
 
-[![Live demo](https://img.shields.io/badge/Live%20demo-Try%20Solvix-18765d?style=for-the-badge)](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)
+[![Live demo](https://img.shields.io/badge/Live%20demo-Try%20Solvix-18765d?style=for-the-badge)](https://solvix-amiru.vercel.app/)
+[![GitHub](https://img.shields.io/badge/Source-GitHub-181717?logo=github)](https://github.com/AmiruMallawarachchi/solvix)
 [![Frontend](https://img.shields.io/badge/frontend-Next.js-black)](./frontend)
 [![Backend](https://img.shields.io/badge/backend-Spring%20Boot%203-6db33f)](./backend)
 [![Database](https://img.shields.io/badge/database-PostgreSQL-336791)](./backend/src/main/resources/db/migration)
 
 ## Try the live demo
 
-**[Open Solvix →](https://frontend-topaz-nine-06hcz5dhs9.vercel.app/)**
+**[Open Solvix →](https://solvix-amiru.vercel.app/)**
 
 The public demo is a synthetic recruiter sandbox. It is deployed as:
 
 ```text
 Browser
   ↓
-Vercel · Next.js frontend
+[Vercel · Next.js frontend](https://solvix-amiru.vercel.app/)
   ↓
-Render · Spring Boot API
+[Render · Spring Boot API](https://solvix-backend-dpxq.onrender.com)
   ↓
 Neon · PostgreSQL
 ```
