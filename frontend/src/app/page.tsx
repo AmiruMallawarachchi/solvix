@@ -2,11 +2,12 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  type AuthProfile,
   type AuthSession,
-  beginCognitoSignIn,
-  completeCognitoSignIn,
-  redirectToCognitoSignOut,
-} from "@/lib/cognito-auth";
+  beginAuth0SignIn,
+  completeAuth0SignIn,
+  redirectToAuth0SignOut,
+} from "@/lib/auth0-auth";
 import { SolvixMark } from "@/components/solvix-mark";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -149,7 +150,7 @@ export default function Home() {
   const [ticketSearch, setTicketSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "ALL">("ALL");
   const isLocalAuth = AUTH_MODE === "local";
-  const isCognitoAuth = AUTH_MODE === "cognito";
+  const isAuth0Auth = AUTH_MODE === "auth0";
 
   const isSupport = session?.role === "SUPPORT_AGENT";
   const ticketCounts = useMemo(() => ({
@@ -202,17 +203,20 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!isCognitoAuth) return;
+    if (!isAuth0Auth) return;
 
     let active = true;
     void (async () => {
       setBusy(true);
       try {
-        const auth = await completeCognitoSignIn();
-        if (!auth || !active) return;
+        const token = await completeAuth0SignIn();
+        if (!token || !active) return;
 
+        const profile = await request<AuthProfile>("/api/v1/auth/me", token);
+        if (!active) return;
+        const auth: AuthSession = { ...profile, token };
         setSession(auth);
-        await refreshTickets(auth.token);
+        await refreshTickets(token);
       } catch (reason) {
         if (active) handleFailure(reason);
       } finally {
@@ -223,7 +227,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [handleFailure, isCognitoAuth, loadHistory, refreshTickets]);
+  }, [handleFailure, isAuth0Auth, refreshTickets]);
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -355,9 +359,9 @@ export default function Home() {
     setSelectedId(null);
     setActivities([]);
     setError("");
-    if (isCognitoAuth) {
+    if (isAuth0Auth) {
       try {
-        redirectToCognitoSignOut();
+        redirectToAuth0SignOut();
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Could not sign out.");
       }
@@ -413,7 +417,7 @@ export default function Home() {
                   {busy ? "Signing in..." : "Enter the demo"}
                 </button>
               </form>
-            ) : isCognitoAuth ? (
+            ) : isAuth0Auth ? (
               <div className="form-stack">
                 {error && <p className="error-message" role="alert">{error}</p>}
                 <button
@@ -422,13 +426,13 @@ export default function Home() {
                   onClick={() => {
                     setBusy(true);
                     setError("");
-                    void beginCognitoSignIn().catch((reason: unknown) => {
+                    void beginAuth0SignIn().catch((reason: unknown) => {
                       setBusy(false);
                       setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
                     });
                   }}
                 >
-                  {busy ? "Checking sign-in..." : "Continue with Cognito"}
+                  {busy ? "Checking sign-in..." : "Continue with Auth0"}
                 </button>
               </div>
             ) : (

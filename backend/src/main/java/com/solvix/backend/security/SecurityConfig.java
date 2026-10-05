@@ -71,6 +71,7 @@ public class SecurityConfig {
     @Bean
     UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository.findByUsername(username)
+                .filter(user -> user.getPasswordHash() != null)
                 .map(user -> User.withUsername(user.getUsername())
                         .password(user.getPasswordHash())
                         .roles(user.getRole().name())

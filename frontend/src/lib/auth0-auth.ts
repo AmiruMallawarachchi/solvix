@@ -4,20 +4,14 @@ export type AuthSession = {
   role: string;
 };
 
-const PENDING_AUTH_KEY = "solvix.cognito.pending-auth";
-const ROLES = [
-  "CUSTOMER",
-  "SUPPORT_AGENT",
-  "DEVELOPER",
-  "TEAM_LEAD",
-  "MANAGER",
-  "ADMINISTRATOR",
-] as const;
-const ROLE_SET = new Set<string>(ROLES);
+export type AuthProfile = Omit<AuthSession, "token">;
 
-type CognitoConfig = {
+const PENDING_AUTH_KEY = "solvix.auth0.pending-auth";
+
+type Auth0Config = {
   domain: URL;
   clientId: string;
+  audience: string;
   redirectUri: string;
   logoutUri: string;
 };
@@ -25,6 +19,7 @@ type CognitoConfig = {
 type PendingAuth = {
   state: string;
   verifier: string;
+  createdAt: number;
 };
 
 function requiredEnvironmentValue(name: string, value: string | undefined): string {
@@ -54,41 +49,45 @@ function parseRedirectUri(name: string, value: string): string {
   return value;
 }
 
-function getCognitoConfig(): CognitoConfig {
+function getAuth0Config(): Auth0Config {
   const domainValue = requiredEnvironmentValue(
-    "NEXT_PUBLIC_COGNITO_DOMAIN",
-    process.env.NEXT_PUBLIC_COGNITO_DOMAIN,
+    "NEXT_PUBLIC_AUTH0_DOMAIN",
+    process.env.NEXT_PUBLIC_AUTH0_DOMAIN,
   );
   let domain: URL;
   try {
     domain = new URL(domainValue);
   } catch {
-    throw new Error("NEXT_PUBLIC_COGNITO_DOMAIN must be an absolute URL.");
+    throw new Error("NEXT_PUBLIC_AUTH0_DOMAIN must be an absolute URL.");
   }
   const clientId = requiredEnvironmentValue(
-    "NEXT_PUBLIC_COGNITO_CLIENT_ID",
-    process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
+    "NEXT_PUBLIC_AUTH0_CLIENT_ID",
+    process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID,
+  );
+  const audience = requiredEnvironmentValue(
+    "NEXT_PUBLIC_AUTH0_API_AUDIENCE",
+    process.env.NEXT_PUBLIC_AUTH0_API_AUDIENCE,
   );
   const redirectUri = parseRedirectUri(
-    "NEXT_PUBLIC_COGNITO_REDIRECT_URI",
+    "NEXT_PUBLIC_AUTH0_REDIRECT_URI",
     requiredEnvironmentValue(
-      "NEXT_PUBLIC_COGNITO_REDIRECT_URI",
-      process.env.NEXT_PUBLIC_COGNITO_REDIRECT_URI,
+      "NEXT_PUBLIC_AUTH0_REDIRECT_URI",
+      process.env.NEXT_PUBLIC_AUTH0_REDIRECT_URI,
     ),
   );
   const logoutUri = parseRedirectUri(
-    "NEXT_PUBLIC_COGNITO_LOGOUT_URI",
+    "NEXT_PUBLIC_AUTH0_LOGOUT_URI",
     requiredEnvironmentValue(
-      "NEXT_PUBLIC_COGNITO_LOGOUT_URI",
-      process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URI,
+      "NEXT_PUBLIC_AUTH0_LOGOUT_URI",
+      process.env.NEXT_PUBLIC_AUTH0_LOGOUT_URI,
     ),
   );
 
   if (domain.protocol !== "https:" || domain.pathname !== "/" || domain.search || domain.hash) {
-    throw new Error("The Cognito hosted UI domain must use HTTPS.");
+    throw new Error("The Auth0 tenant domain must be an HTTPS origin without a path.");
   }
 
-  return { domain, clientId, redirectUri, logoutUri };
+  return { domain, clientId, audience, redirectUri, logoutUri };
 }
 
 function base64Url(bytes: Uint8Array): string {
@@ -101,20 +100,21 @@ function randomUrlSafeValue(): string {
   return base64Url(crypto.getRandomValues(new Uint8Array(32)));
 }
 
-export async function beginCognitoSignIn(): Promise<void> {
-  const config = getCognitoConfig();
+export async function beginAuth0SignIn(): Promise<void> {
+  const config = getAuth0Config();
   const verifier = randomUrlSafeValue();
   const state = randomUrlSafeValue();
   const challenge = base64Url(
     new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))),
   );
-  const pendingAuth: PendingAuth = { state, verifier };
+  const pendingAuth: PendingAuth = { state, verifier, createdAt: Date.now() };
   sessionStorage.setItem(PENDING_AUTH_KEY, JSON.stringify(pendingAuth));
 
-  const authorizeUrl = new URL("/oauth2/authorize", config.domain);
+  const authorizeUrl = new URL("/authorize", config.domain);
   authorizeUrl.searchParams.set("client_id", config.clientId);
+  authorizeUrl.searchParams.set("audience", config.audience);
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("scope", "openid email profile");
+  authorizeUrl.searchParams.set("scope", "openid profile email");
   authorizeUrl.searchParams.set("redirect_uri", config.redirectUri);
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge_method", "S256");
@@ -145,51 +145,19 @@ function parsePendingAuth(value: string | null): PendingAuth {
     !("state" in pending) ||
     typeof pending.state !== "string" ||
     !("verifier" in pending) ||
-    typeof pending.verifier !== "string"
+    typeof pending.verifier !== "string" ||
+    !("createdAt" in pending) ||
+    typeof pending.createdAt !== "number" ||
+    Date.now() - pending.createdAt > 10 * 60 * 1000 ||
+    Date.now() < pending.createdAt
   ) {
     throw new Error("The sign-in request could not be verified. Please try again.");
   }
 
-  return { state: pending.state, verifier: pending.verifier };
+  return { state: pending.state, verifier: pending.verifier, createdAt: pending.createdAt };
 }
 
-function decodeAccessToken(accessToken: string): Record<string, unknown> {
-  const payload = accessToken.split(".")[1];
-  if (!payload) throw new Error("Cognito returned an invalid access token.");
-
-  try {
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const binary = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    const claims: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    if (!isRecord(claims)) throw new Error("Cognito returned invalid access-token claims.");
-    return claims;
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith("Cognito returned")) throw error;
-    throw new Error("Cognito returned an invalid access token.");
-  }
-}
-
-function stringClaim(claims: Record<string, unknown>, names: string[]): string | null {
-  for (const name of names) {
-    const value = claims[name];
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return null;
-}
-
-function getRole(claims: Record<string, unknown>): string {
-  const groups = claims["cognito:groups"];
-  if (Array.isArray(groups)) {
-    const role = groups.find(
-      (group): group is string => typeof group === "string" && ROLE_SET.has(group.toUpperCase()),
-    );
-    if (role) return role.toUpperCase();
-  }
-  return "CUSTOMER";
-}
-
-export async function completeCognitoSignIn(): Promise<AuthSession | null> {
+export async function completeAuth0SignIn(): Promise<string | null> {
   const callbackUrl = new URL(window.location.href);
   const code = callbackUrl.searchParams.get("code");
   const oauthError = callbackUrl.searchParams.get("error");
@@ -206,14 +174,14 @@ export async function completeCognitoSignIn(): Promise<AuthSession | null> {
     throw new Error("The sign-in response could not be verified. Please try again.");
   }
   if (oauthError) {
-    throw new Error(oauthErrorDescription ?? "Cognito sign-in failed.");
+    throw new Error(oauthErrorDescription ?? "Auth0 sign-in failed.");
   }
   if (!code) {
-    throw new Error("Cognito did not return an authorization code. Please try signing in again.");
+    throw new Error("Auth0 did not return an authorization code. Please try signing in again.");
   }
 
-  const config = getCognitoConfig();
-  const tokenUrl = new URL("/oauth2/token", config.domain);
+  const config = getAuth0Config();
+  const tokenUrl = new URL("/oauth/token", config.domain);
   let response: Response;
   try {
     response = await fetch(tokenUrl, {
@@ -228,43 +196,38 @@ export async function completeCognitoSignIn(): Promise<AuthSession | null> {
       }),
     });
   } catch {
-    throw new Error("Could not reach Cognito to complete sign-in. Please try again.");
+    throw new Error("Could not reach Auth0 to complete sign-in. Please try again.");
   }
 
   if (!response.ok) {
-    throw new Error(`Cognito could not complete sign-in (${response.status}).`);
+    throw new Error(`Auth0 could not complete sign-in (${response.status}).`);
   }
 
   let tokens: unknown;
   try {
     tokens = await response.json();
   } catch {
-    throw new Error("Cognito returned an invalid token response.");
+    throw new Error("Auth0 returned an invalid token response.");
   }
   if (
     !isRecord(tokens) ||
     !("access_token" in tokens) ||
-    typeof tokens.access_token !== "string"
+    typeof tokens.access_token !== "string" ||
+    tokens.access_token.length === 0 ||
+    !("token_type" in tokens) ||
+    typeof tokens.token_type !== "string" ||
+    tokens.token_type.toLowerCase() !== "bearer"
   ) {
-    throw new Error("Cognito returned an invalid token response.");
+    throw new Error("Auth0 returned an invalid token response.");
   }
 
-  const claims = decodeAccessToken(tokens.access_token);
-  if (typeof claims.exp !== "number" || claims.exp * 1000 <= Date.now()) {
-    throw new Error("Cognito returned an expired access token. Please sign in again.");
-  }
-
-  return {
-    token: tokens.access_token,
-    username: stringClaim(claims, ["preferred_username", "username", "email", "sub"]) ?? "Solvix user",
-    role: getRole(claims),
-  };
+  return tokens.access_token;
 }
 
-export function redirectToCognitoSignOut(): void {
-  const config = getCognitoConfig();
-  const logoutUrl = new URL("/logout", config.domain);
+export function redirectToAuth0SignOut(): void {
+  const config = getAuth0Config();
+  const logoutUrl = new URL("/v2/logout", config.domain);
   logoutUrl.searchParams.set("client_id", config.clientId);
-  logoutUrl.searchParams.set("logout_uri", config.logoutUri);
+  logoutUrl.searchParams.set("returnTo", config.logoutUri);
   window.location.assign(logoutUrl.toString());
 }

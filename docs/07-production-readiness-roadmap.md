@@ -11,7 +11,7 @@ The next target is a secure, invite-only single-organization pilot on the curren
 - Start with one organization and a small, known pilot group. Do not claim multi-tenant isolation.
 - Keep the public demo isolated from the pilot, synthetic-data-only, and clearly labelled as a demo.
 - Continue using Vercel, Render, and Neon for this roadmap. Recheck current service limits and costs before relying on free tiers.
-- Use Clerk as the proposed managed identity provider only after confirming current free-tier, production-domain, role/organization, and hosting fit. Pause before integration if any required capability is unavailable or has unacceptable cost.
+- Use Auth0 Free for the single-organization pilot, with the hosted tenant domain and exact Vercel callback URLs. Auth0 currently lists up to 25,000 MAUs, five organizations, and one custom domain on Free; built-in organization RBAC and separate dev/prod tenants are not included. Solvix therefore owns application roles in its database, and the production Auth0 tenant is not used for local development. Recheck current plan terms before provisioning.
 - Use Groq as the initial AI provider, behind a backend provider interface. Keep the API key only in server-side secret configuration.
 - AI may prepare advice and proposals. It must not autonomously change ticket status, assignment, or send customer communications. Require explicit approval by an authorized human and audit the decision and execution.
 - Do not use real customer data until privacy, access, retention, support, and recovery controls have passed the pilot gates.
@@ -36,21 +36,33 @@ Every stage is a separately reviewable slice with acceptance evidence. A capabil
 - Keep `main` releasable and use focused `feat/<scope>`, `fix/<scope>`, or `docs/<scope>` branches, conventional commit messages, and a PR per slice.
 - Extend CI coverage to backend, frontend, Docker/Compose, database migrations/integration tests, AI/worker/evaluation code, infrastructure, and relevant documentation.
 - Use non-production secrets and data for previews. Promote production only from reviewed, passing changes merged to `main`; require explicit review for authentication, authorization, and database changes.
-- Validate Clerk's current pricing/limits, custom-domain requirement, supported role/organization model, and integration with the current frontend/backend before implementation.
+- Confirm Auth0 tenant and API configuration, exact callback/logout/origin allowlists, user provisioning procedure, and current plan limits before deployment. Do not add preview URLs with wildcards.
 - Document secret ownership, deploy health checks, rollback steps, and separation among public demo, previews, and pilot.
 
-**Gate:** delivery checks and preview isolation are working; Clerk is viable for the agreed pilot or the identity decision is revisited before code integration.
+**Gate:** delivery checks are passing, preview secrets/data remain isolated, and the Auth0 Free constraints are accepted for the pilot.
 
 ### 3. Secure API, PostgreSQL, and identity
 
 - Complete API validation, bounded pagination/filtering, consistent error handling, concurrency behavior, and durable audit events.
-- Integrate Clerk OIDC/JWT validation in the backend. Keep local test/development authentication isolated from deployed environments.
+- Integrate Auth0 OIDC/JWT validation in the backend, verifying signature, issuer, expiry, and API audience. Resolve each stable Auth0 `sub` to a pre-provisioned Solvix user; reject unknown or disabled identities. Keep local test/development authentication isolated from deployed environments.
+- Provision the Auth0 user and Solvix account mapping through an administrator-controlled process. Do not auto-link by email or accept user-editable metadata as role authority. The role used for authorization comes from the Solvix database.
 - Map authenticated identities to application users and enforce approved customer, support-agent, developer, team-lead, manager, and administrator capabilities server-side.
 - Enforce owner/team scope on all reads and writes, including search, dashboards, attachments, and AI context as those surfaces are added.
 - Test against PostgreSQL, not only H2. Verify forward-only Flyway migrations from a representative existing database and exercise backup/restore procedures.
 - Add appropriate rate limits, secure CORS/headers, dependency and secret checks, and an ASVS-informed security checklist; make no certification claim.
 
 **Gate:** golden ticket workflows pass with managed identity; negative tests prove user/team isolation; PostgreSQL migration and recovery evidence is recorded.
+
+#### Auth0 pilot configuration and account provisioning
+
+- Create an Auth0 Single Page Application and a custom API with a unique audience. Use the hosted Auth0 tenant domain; the application does not need to own a custom domain for the exact Vercel callback flow.
+- Configure authorization-code flow with PKCE and no client secret. Add only the exact pilot callback, logout, and web-origin URLs to Auth0. Do not use wildcard preview URLs.
+- Disable public self-signup for the invite-only pilot. For each approved person, an Auth0 administrator creates the account through the tenant's approved invitation flow, verifies the intended email out of band, and records the Auth0 `sub` from that exact tenant's user profile. A Solvix operator then creates the corresponding application user in the pilot database, setting `auth0_subject` to that exact `sub`, choosing a unique Solvix username and an approved `UserRole`, and setting `enabled` to true. After the user signs in, verify `/api/v1/auth/me` returns the intended Solvix username and database-owned role. Disable both access paths when removing a pilot user: disable the Auth0 account and set the Solvix user's `enabled` field to false. Never auto-link by email, copy an identity from another tenant, store an Auth0 password in Solvix, or accept user-editable metadata as role authority.
+- Configure `NEXT_PUBLIC_AUTH_MODE=auth0`, the Auth0 tenant domain, public client ID, API audience, callback/logout URLs, and API base URL only in the isolated pilot frontend environment.
+- Configure the isolated pilot backend with the production profile, `AUTH0_ISSUER_URI` (including its trailing slash), `AUTH0_API_AUDIENCE`, and exact `CORS_ALLOWED_ORIGIN`. The browser never receives an Auth0 client secret; the current public demo environment remains on its existing local/demo auth configuration.
+- Auth0 Free does not provide separate development/production tenants. Do not configure preview deployments against the pilot tenant; use isolated local auth for development and the single Auth0 tenant only for the pilot.
+
+Provider references: [Auth0 Free plan](https://auth0.com/pricing), [Application settings and callback allowlists](https://auth0.com/docs/get-started/applications/application-settings), [Next.js integration](https://auth0.com/docs/quickstart/webapp/nextjs), and [Access-token validation](https://auth0.com/docs/secure/tokens/access-tokens/validate-access-tokens).
 
 ### 4. Complete ticket workflows and agent/customer experience
 
@@ -139,7 +151,7 @@ This checklist does not imply an SLA, certification, or multi-tenant isolation.
 
 ## Open validations
 
-- Recheck Clerk free-tier terms, production-domain requirements, role/organization fit, and Vercel compatibility before implementing identity.
+- Recheck Auth0 Free limits, exact redirect allowlists, and API audience configuration before pilot deployment. Free does not provide separate development/production tenants or built-in organization RBAC; local auth remains development-only and application roles remain in Solvix.
 - Recheck Vercel, Render, Neon, Groq, notification, and attachment-provider quotas/terms/costs when each capability is scheduled.
 - Agree numeric workload, performance, recovery, retention, and cost-alert targets with the pilot owner before production launch.
 - Confirm who operates and supports the pilot, who can access its data, and how retention/deletion requests are handled.

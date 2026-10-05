@@ -35,7 +35,7 @@ The current implementation provides ticket intake, ownership-scoped viewing, sup
 
 - FR-003 current updates are limited to the operations implemented by the API; each additional field/action requires authorization and audit tests.
 - Team administration, AI, evidence retrieval, search, dashboards, notifications, attachments, and administration are planned, not current capabilities.
-- Current local/demo authentication is not the selected production identity design. Clerk is the proposed pilot provider, subject to validation of current plan limits, production-domain requirements, and role/organization fit.
+- Current local/demo authentication is not the selected pilot identity design. The selected candidate is Auth0 Free: use its hosted tenant domain and an exact Vercel callback allowlist; keep application roles in Solvix because organization-level RBAC and separate development/production tenants are not included in the Free plan. Recheck current terms before provisioning.
 
 The broader product is intended to be delivered in stages rather than treated as permanently out of scope. See the [production readiness roadmap](./07-production-readiness-roadmap.md) for the sequence and release gates. A requirement remains planned until its acceptance criteria are implemented and verified.
 

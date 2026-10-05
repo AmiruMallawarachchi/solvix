@@ -66,7 +66,7 @@ focuses on the workflow fundamentals:
 | Frontend | Next.js 16, React 19, TypeScript, responsive CSS |
 | API | Spring Boot 3.4, Java 17, REST controllers |
 | Persistence | PostgreSQL, Spring Data JPA, Flyway |
-| Security | BCrypt passwords, short-lived JWTs, CORS allow-list |
+| Security | Demo/local: BCrypt and short-lived JWTs; planned pilot path: Auth0 PKCE/JWT validation with database-owned roles (not yet deployed) |
 | Delivery | Docker, Render Blueprint, Vercel, Neon |
 | Quality | Backend tests, frontend lint/type-check/build, GitHub Actions |
 

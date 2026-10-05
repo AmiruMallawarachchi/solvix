@@ -29,6 +29,7 @@ public class AuthController {
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         UserEntity user = userRepository.findByUsername(request.username())
                 .filter(UserEntity::isEnabled)
+                .filter(candidate -> candidate.getPasswordHash() != null)
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
         return new LoginResponse(jwtService.issue(user), user.getUsername(), user.getRole().name());

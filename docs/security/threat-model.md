@@ -38,7 +38,7 @@ Secrets, tokens, and internal configuration should not be committed to source co
 
 ### 3.1 Identity and access
 
-The default local profile uses stateless JWT bearer authentication backed by users stored in PostgreSQL. Bootstrap credentials are supplied only through environment variables on first startup, and passwords are stored as BCrypt hashes. Tokens expire after 15 minutes. The production profile now validates Cognito access-token signatures, issuer, token use, and app-client ID; the Next.js client supports Cognito authorization-code flow with PKCE. Ticket authorization remains backend-enforced. This integration has automated tests but has not been configured with a real user pool or deployed. See the [production readiness roadmap](../07-production-readiness-roadmap.md).
+The default local/demo profile uses stateless JWT bearer authentication backed by users stored in PostgreSQL. Bootstrap credentials are supplied only through environment variables on first startup, and passwords are stored as BCrypt hashes. Tokens expire after 15 minutes. The pilot profile validates Auth0 access-token signatures, issuer, expiry, and API audience; it maps the verified Auth0 subject to an enabled Solvix user and takes the application role from PostgreSQL. The Next.js client uses authorization-code flow with PKCE and a public client (no client secret). Unknown/disabled identities are rejected; accounts are not auto-linked by email. The integration requires Auth0 tenant configuration, pilot environment secrets, and administrator-controlled account provisioning before deployment. See the [production readiness roadmap](../07-production-readiness-roadmap.md).
 
 ### 3.2 Authorization model
 
