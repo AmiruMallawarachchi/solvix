@@ -6,7 +6,7 @@ This document explains the initial AI design for Solvix and defines how the AI s
 
 ## Delivery status
 
-AI triage and evidence retrieval are part of the longer-term product vision and were intentionally deferred from the near-term MVP. The human ticket workflow now provides the foundation for a later AI stage, but AI is not yet implemented. Follow the [production readiness roadmap](./07-production-readiness-roadmap.md): add AI only after the production identity, permission model, and operational foundation are ready.
+AI triage and evidence retrieval are part of the longer-term product vision and are not implemented in the current deployment. The human ticket workflow is the foundation for a later AI stage. The planned first provider is Groq, called from the backend with credentials held only in server-side secrets. Add AI only after identity, permission-scoped knowledge, and operational foundations are ready; see the [production readiness roadmap](./07-production-readiness-roadmap.md).
 
 ## AI design principles
 
@@ -22,7 +22,7 @@ AI triage and evidence retrieval are part of the longer-term product vision and 
 Ticket
   -> Input validation
   -> Context builder
-  -> Evidence retrieval
+  -> Permission-scoped evidence retrieval
   -> Policy checks
   -> LangGraph orchestration
   -> Tool execution within guardrails
@@ -45,7 +45,10 @@ Ticket
 - allow-listed tools only
 - permission-aware retrieval
 - schema validation for model output
-- human approval before state-changing operations
+- human approval before consequential state-changing operations or external communication
+- server-side provider credentials; never return secrets to the browser or log them
+- asynchronous execution with bounded retries, timeouts, cost limits, and a disable switch
+- treat ticket and knowledge content as untrusted input; test prompt-injection and data-leakage defenses
 - explicit logging of job metadata, decisions, and tool use
 
 ## Detailed design

@@ -141,7 +141,7 @@ The first usable release is deliberately limited to the human-operated ticket wo
 
 AI triage, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration are deferred from the first release and belong to later stages of the product vision.
 
-The MVP is the first release of Solvix, not the complete product. The approved direction is to extend it through the staged work in [07-production-readiness-roadmap.md](./07-production-readiness-roadmap.md). The first AWS release is planned as an invite-only pilot; the roadmap's security, backup/restore, monitoring, and operational gates must be satisfied before real customer data is used.
+The current public deployment is a synthetic-data portfolio demo, not the production pilot and not the complete product. The next product target is a secure, invite-only single-organization pilot on the existing Vercel, Render, and Neon hosting stack. AWS deployment and multi-tenant SaaS are deferred; see the [production readiness roadmap](./07-production-readiness-roadmap.md) for the staged scope and release gates. No real customer data should be used until the pilot's privacy, authorization, retention, recovery, and operational controls have been verified and explicitly accepted.
 
 ---
 
@@ -156,7 +156,7 @@ Solvix is not intended to be:
 - a platform for replacing human decision-making in every operational workflow
 - a distributed microservices ecosystem without demonstrated need
 
-The initial product should solve a focused and valuable problem well, rather than trying to cover every operational domain at once. For the near-term MVP, AI execution, team management, analytics, integrations, and attachments are explicitly deferred.
+The initial pilot should solve a focused and valuable problem well, rather than trying to cover every operational domain at once. Teams, administration, server-side search, dashboards, notifications, attachments, governed knowledge, and AI are staged capabilities, not claims about the current deployment. Groq is the planned initial AI provider, with its credential restricted to server-side secrets. AI proposals must not perform consequential actions without explicit human approval.
 
 ---
 
@@ -172,11 +172,11 @@ Solvix will be considered successful when it demonstrates the following:
 - role-based access controls prevent unauthorized actions
 - the web interface demonstrates the end-to-end human ticket workflow
 
-AI effectiveness, knowledge retrieval, and manager dashboards are future success measures, not acceptance criteria for this first MVP.
+AI effectiveness, knowledge retrieval, and manager dashboards are not acceptance criteria for the current ticket-workflow demo. They become acceptance criteria only for the later roadmap stages that implement them.
 
 ### Operational KPI targets for early validation
 
-These are design targets for the MVP and will be refined after implementation:
+These are pilot design targets that must be made measurable and accepted before release:
 
 - ticket creation and update workflows complete reliably
 - issue categorization accuracy is measurable and auditable

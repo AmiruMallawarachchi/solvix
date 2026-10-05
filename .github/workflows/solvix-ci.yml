@@ -5,18 +5,40 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
+      - "ai-service/**"
+      - "workers/**"
+      - "evals/**"
+      - "tests/**"
+      - "infra/**"
+      - "docs/**"
       - "docker-compose.yml"
       - ".env.example"
+      - "render.yaml"
+      - "neon.ts"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/**"
   push:
     branches:
       - main
       - "feat/**"
+      - "fix/**"
+      - "docs/**"
     paths:
       - "backend/**"
       - "frontend/**"
+      - "ai-service/**"
+      - "workers/**"
+      - "evals/**"
+      - "tests/**"
+      - "infra/**"
+      - "docs/**"
       - "docker-compose.yml"
       - ".env.example"
+      - "render.yaml"
+      - "neon.ts"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/**"
 
 permissions:

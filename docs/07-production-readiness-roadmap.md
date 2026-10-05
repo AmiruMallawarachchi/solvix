@@ -1,127 +1,146 @@
-# Solvix Production Readiness Roadmap
+# Solvix Product and Pilot Roadmap
 
 ## Purpose and current position
 
-Solvix has an MVP ticket workflow: a Spring Boot API, a Next.js user interface, PostgreSQL persistence and migrations, customer ownership checks, support-agent operations, ticket comments, lifecycle history, and automated backend/frontend checks.
+Solvix has a working ticket workflow foundation: a Spring Boot API, Next.js interface, PostgreSQL persistence and Flyway migrations, ticket ownership checks, support-agent operations, comments, lifecycle history, and automated backend/frontend checks. The public deployment is a synthetic-data portfolio demo, not a customer service or production pilot.
 
-The MVP is a foundation, not the complete product and not yet a production launch. The immediate deployment objective is a low-traffic, interactive portfolio demo under free-plan limits; it does not require an always-on AWS environment. See the [portfolio demo deployment plan](./08-portfolio-demo-deployment.md). This production roadmap remains the separately staged path toward the wider product described in the charter. The implementation should remain a modular monolith until measured needs justify splitting services.
+The next target is a secure, invite-only single-organization pilot on the current Vercel, Render, and Neon hosting setup. Keep the Spring Boot modular monolith and add capabilities in reviewable vertical slices. AWS deployment and multi-tenant SaaS are explicitly deferred; the existing AWS materials are future architecture documentation only.
 
-## Decisions for the first production releases
+## Agreed decisions and boundaries
 
-- **Cloud:** AWS, initially in `ap-south-1` (Mumbai).
-- **Initial cost posture:** minimize recurring spend while retaining managed security, persistence, backups, and operational visibility.
-- **Initial audience:** invite-only pilot for a small, known group. Public self-service signup is disabled initially.
-- **Organization model:** one organization for the initial deployment. Do not imply multi-tenant isolation until it is explicitly designed and tested.
-- **Availability trade-off:** start with a single-AZ PostgreSQL deployment and automated backups. Backups are not high availability; an AZ failure may cause downtime. Revisit multi-AZ when user needs and budget are known.
-- **Production identity:** Amazon Cognito using OIDC/JWT. Keep local development/test login isolated from production identity.
-- **AI provider:** Amazon Bedrock, subject to model, quota, data-handling, and cost validation in the selected region.
-- **AI authority:** AI can recommend and prepare proposals, but cannot directly execute consequential ticket or external actions. An authorized human must approve the exact proposal, and the decision must be auditable.
-- **Data:** do not put secrets, credentials, or unapproved real customer data in source control, prompts, logs, or test fixtures.
+- Start with one organization and a small, known pilot group. Do not claim multi-tenant isolation.
+- Keep the public demo isolated from the pilot, synthetic-data-only, and clearly labelled as a demo.
+- Continue using Vercel, Render, and Neon for this roadmap. Recheck current service limits and costs before relying on free tiers.
+- Use Clerk as the proposed managed identity provider only after confirming current free-tier, production-domain, role/organization, and hosting fit. Pause before integration if any required capability is unavailable or has unacceptable cost.
+- Use Groq as the initial AI provider, behind a backend provider interface. Keep the API key only in server-side secret configuration.
+- AI may prepare advice and proposals. It must not autonomously change ticket status, assignment, or send customer communications. Require explicit approval by an authorized human and audit the decision and execution.
+- Do not use real customer data until privacy, access, retention, support, and recovery controls have passed the pilot gates.
+- Do not provision AWS as part of this plan. Revisit it only as a separately approved and costed effort.
 
-## Delivery stages and release gates
+## Delivery stages
 
-Each stage is a separately reviewable release. The portfolio demo is a separate, synthetic-data demonstration and is not a production release or customer pilot. The first secure ticket workflow may be deployed as an invite-only beta before all later product features are ready.
+Every stage is a separately reviewable slice with acceptance evidence. A capability is not considered implemented merely because it appears in the architecture or requirements.
 
-### 1. Product contract and measurable launch gates
+### 1. Product contract and measurable pilot gates
 
-- Reconcile charter, requirements, API, domain, security, and AI documents with the agreed phased scope.
-- Specify role capabilities, ticket categories, team boundaries, data classification, retention/deletion, expected workload, and supported user experience.
-- Set measurable initial availability, recovery time/data loss, backup retention, log/audit retention, response-time, accessibility, and monthly cost-alert targets before production sign-off.
-- Connect each acceptance criterion to automated tests or documented verification evidence.
+- Reconcile the charter, requirements, architecture, API, and data model with the single-organization pilot and accurately distinguish implemented, planned, and deferred capabilities.
+- Specify roles/capabilities, ticket visibility, team ownership, categories, lifecycle rules, retention/deletion, and customer communication.
+- Agree measurable pilot gates for access control, expected workload, supported browsers, response time, service health, recovery, retention, operational ownership, and cost alerts.
+- Map each included acceptance criterion to an automated test or recorded verification.
 
-### 2. Core workflow, identity, and security
+**Gate:** scope and pilot acceptance criteria are explicit, consistent, testable, and accepted by the project owner.
 
-- Complete production-grade API behavior: validation, consistent errors, pagination/filtering, concurrency handling, transactions, and durable audit coverage.
-- Integrate Cognito OIDC/JWT validation; retire bootstrap-password login from production while retaining a clearly isolated local/test path.
-- Implement server-side least-privilege authorization for customers, support agents, developers, team leads, managers, and administrators.
-- Verify PostgreSQL behavior and forward-only migrations against PostgreSQL itself, including legacy data migration and restore testing.
-- Add rate limiting, safe CORS/security headers, secret/dependency scanning, security regression tests, and an OWASP ASVS-informed review checklist. Do not claim compliance or certification without evidence.
+### 2. Delivery foundations and identity-provider validation
 
-### Cognito integration configuration
+- Verify the current repository branch, worktree, PR state, and baseline before each slice; preserve all user changes.
+- Keep `main` releasable and use focused `feat/<scope>`, `fix/<scope>`, or `docs/<scope>` branches, conventional commit messages, and a PR per slice.
+- Extend CI coverage to backend, frontend, Docker/Compose, database migrations/integration tests, AI/worker/evaluation code, infrastructure, and relevant documentation.
+- Use non-production secrets and data for previews. Promote production only from reviewed, passing changes merged to `main`; require explicit review for authentication, authorization, and database changes.
+- Validate Clerk's current pricing/limits, custom-domain requirement, supported role/organization model, and integration with the current frontend/backend before implementation.
+- Document secret ownership, deploy health checks, rollback steps, and separation among public demo, previews, and pilot.
 
-The production code now supports a Cognito authorization-code flow with PKCE in the browser and Cognito access-token validation in the API. It remains unconfigured and undeployed until a user pool and app client are provisioned.
+**Gate:** delivery checks and preview isolation are working; Clerk is viable for the agreed pilot or the identity decision is revisited before code integration.
 
-- Configure the Cognito app client for authorization code only, public-client PKCE, and the `openid`, `email`, and `profile` scopes. Do not create or expose a client secret in the browser.
-- Register the exact frontend callback and sign-out URLs with Cognito. The frontend requires `NEXT_PUBLIC_AUTH_MODE=cognito`, `NEXT_PUBLIC_COGNITO_DOMAIN`, `NEXT_PUBLIC_COGNITO_CLIENT_ID`, `NEXT_PUBLIC_COGNITO_REDIRECT_URI`, and `NEXT_PUBLIC_COGNITO_LOGOUT_URI`; see [frontend/.env.example](../frontend/.env.example).
-- Configure the API with `SPRING_PROFILES_ACTIVE=production`, `COGNITO_ISSUER_URI`, `COGNITO_CLIENT_ID` (matching the frontend app client), and `CORS_ALLOWED_ORIGIN`. `COGNITO_JWK_SET_URI` can override the issuer-derived JWKS URL.
-- Cognito groups must use the backend role names (`CUSTOMER`, `SUPPORT_AGENT`, `DEVELOPER`, `TEAM_LEAD`, `MANAGER`, `ADMINISTRATOR`). Unknown groups do not grant backend roles.
-- The browser keeps the access token in memory; a page refresh requires signing in again. Authorization is enforced by the API, not by frontend role display or UI controls.
-- Before pilot use, configure a real pool, exercise login/logout and denied-access cases in a browser, and verify the configured callback, sign-out, issuer, client ID, groups, and CORS origin. Passing local tests alone is not deployment evidence.
+### 3. Secure API, PostgreSQL, and identity
 
-### 3. AWS infrastructure and first beta
+- Complete API validation, bounded pagination/filtering, consistent error handling, concurrency behavior, and durable audit events.
+- Integrate Clerk OIDC/JWT validation in the backend. Keep local test/development authentication isolated from deployed environments.
+- Map authenticated identities to application users and enforce approved customer, support-agent, developer, team-lead, manager, and administrator capabilities server-side.
+- Enforce owner/team scope on all reads and writes, including search, dashboards, attachments, and AI context as those surfaces are added.
+- Test against PostgreSQL, not only H2. Verify forward-only Flyway migrations from a representative existing database and exercise backup/restore procedures.
+- Add appropriate rate limits, secure CORS/headers, dependency and secret checks, and an ASVS-informed security checklist; make no certification claim.
 
-Candidate architecture, subject to current service, pricing, and region verification:
+**Gate:** golden ticket workflows pass with managed identity; negative tests prove user/team isolation; PostgreSQL migration and recovery evidence is recorded.
 
-- AWS CDK for infrastructure as code.
-- Next.js hosting through AWS Amplify Hosting.
-- The Spring Boot container on a managed AWS container service.
-- Private Amazon RDS for PostgreSQL, initially single-AZ with automated backups.
-- Cognito for identity; Secrets Manager for runtime secrets; CloudWatch for logs, metrics, dashboards, and alarms.
-- HTTPS and a custom domain once domain ownership and DNS are available.
+### 4. Complete ticket workflows and agent/customer experience
 
-Release gates:
+- Complete responsive, accessible customer and agent flows for intake, details, comments, status, priority, assignment, and activity.
+- Add server-side, bounded, permission-aware search, filtering, sorting, and pagination. Keep UI behavior consistent with API semantics.
+- Ensure authorization remains a backend responsibility; display appropriate loading, empty, validation, and recovery states in the UI.
 
-- Separate non-production and production environments; encrypt data in transit and at rest; use least-privilege IAM and private database networking.
-- Add image/dependency checks, controlled schema migrations, production deployment approval, smoke tests, rollback instructions, and a tested backup restore.
-- Configure budget alerts and review actual cost in the first AWS environment before inviting pilot users.
-- Keep the first pilot invite-only; no public signup. Accept real user data only after privacy, access, support, and recovery controls are approved.
+**Gate:** critical workflows pass automated API/UI coverage and keyboard, mobile, and supported-browser checks.
 
-### 4. Teams, roles, and administration
+### 5. Teams and administration
 
-- Add teams, memberships, expanded roles, team/user ticket ownership, and assignment history with forward-only database migrations.
-- Add secure user, role, team, and membership administration.
-- Verify both allowed and denied access across users, roles, teams, disabled accounts, and state-changing actions.
+- Add team and membership models, assignment history, user status, and approved roles with forward-only migrations.
+- Add secured team/user/role administration and audit all privilege and membership changes.
+- Test both allowed and denied operations, including cross-team access, disabled users, and privilege changes.
 
-### 5. Search, queues, dashboards, and reporting
+**Gate:** administration is least-privileged and access-isolation tests pass.
 
-- Add bounded, paginated, permission-aware search and filters across ticket ID, title, status, priority, category, assignee, team, and dates.
-- Add role-scoped queues and dashboards for backlog, status, priority, workload, and resolution trends.
-- Define metric semantics; measure query plans and response time before adding indexes or separate search infrastructure.
+### 6. Governed knowledge and evidence
 
-### 6. Notifications, attachments, and knowledge
+- Add reviewed, versioned knowledge records with provenance, publication state, and access scope.
+- Start with permission-aware PostgreSQL text search. Add vector retrieval only if a reviewed evaluation set demonstrates a material improvement.
+- Preserve source references so agents can inspect evidence; never retrieve data outside the requesting user's permissions.
 
-- Add reliable notification delivery with retries, dead-letter handling, delivery state, preferences, and appropriate opt-out behavior.
-- Store attachments privately in S3 with short-lived authorized transfer URLs, type/size limits, malware scanning, audit events, and retention/deletion controls.
-- Create permission-aware knowledge records with source/version provenance and a human-reviewed ingestion path.
+**Gate:** evidence is traceable, current, and permission-scoped.
 
-### 7. Asynchronous Bedrock AI
+### 7. Asynchronous Groq AI triage
 
-- Add queued, idempotent background jobs with bounded retries, dead-letter handling, timeouts, visible state, and failure isolation from ticket operations.
-- Verify Bedrock model availability, quotas, data handling, and costs in Mumbai before selecting a model.
-- Start with structured triage and evidence suggestions. Validate model output, record model/prompt/version/source metadata, and evaluate against a human-reviewed dataset.
-- Restrict retrieval to content the requesting user can access. Treat ticket text, uploads, and retrieved content as untrusted input; test prompt-injection and data-leakage defenses.
-- Require a human approval bound to the exact proposed action before the backend executes it. Record proposals, approvals, rejections, expirations, and execution idempotently.
-- Add AI spend controls, telemetry and redaction, safety regression tests, and a feature kill switch.
+- Add a backend provider interface and call Groq only from server-side code. Configure the key as a Render secret, never in browser-visible variables, source control, or logs.
+- Persist job and suggestion state; choose a durable worker/retry mechanism only after validating Render/Neon constraints. Include idempotency, bounded retries, timeouts, visible failures, and a kill switch.
+- Begin with advisory category/priority/summary, rationale, permitted evidence, and optional draft reply. Validate structured output and record model, prompt, and source metadata.
+- Treat ticket and knowledge content as untrusted input. Implement data minimization, redaction, prompt-injection/data-leakage tests, quality evaluation, and usage/cost limits.
+- Bind each approval to the exact proposal. Only an authorized human may approve; record approval/rejection and any execution. Never automatically change state, assign work, or contact customers.
 
-### 8. Production operations and broad launch
+**Gate:** the ticket workflow remains usable when AI is unavailable; AI is opt-in, auditable, permission-scoped, evaluated, and explicitly disableable.
 
-- Test end-to-end workflows, migrations, authorization, accessibility, browser behavior, performance/load, resilience, restore, and security in production-like environments.
-- Complete threat-model review and independent security testing appropriate to exposure; resolve critical/high findings before broader launch.
-- Provide monitored alarms, incident and recovery runbooks, operational ownership, data lifecycle procedures, patching, cost controls, and rollback.
-- Roll out in controlled cohorts, verify production behavior, and revisit multi-AZ availability and multi-organization support only after explicit requirements and cost review.
+### 8. Notifications and private attachments
 
-## Production-ready definition
+- Add notification preferences, delivery state, bounded retries, and privacy/opt-out handling using a validated hosting-compatible provider.
+- Add private attachment storage with authorized short-lived access, size/type limits, malware scanning before trusted use, audit metadata, and retention/deletion rules.
+- Select providers only after validating security, durability, and cost; do not assume a particular queue or object store before that review.
 
-“Production-ready” means more than a successful deploy. A release must have:
+**Gate:** delivery failures are visible and recoverable; unauthorized users cannot retrieve attachments or notification content.
 
-- requirements and acceptance criteria for the included capabilities
-- tested authorization and data isolation
-- repeatable migrations and a successful backup-restore exercise
-- managed secrets and least-privilege cloud roles
-- CI checks and a reviewed deployment/rollback path
-- monitored service health, error rates, database capacity, and cost
-- agreed availability/recovery and data retention targets
-- security and accessibility verification appropriate to the release
-- operational ownership and a way for pilot users to report issues
+### 9. Dashboards and operational readiness
 
-No certification or availability guarantee is implied by this checklist alone.
+- Add role-scoped backlog, status, priority, workload, and resolution reporting with documented metric definitions.
+- Set performance budgets and use measured query plans before adding indexes or separate search infrastructure.
+- Add health/readiness checks, structured logs/metrics, alerting, incident/support runbooks, operational ownership, retention/deletion procedures, and deployment rollback guidance.
+- Exercise backup restore and recovery in a production-like environment.
 
-## Open prerequisites
+**Gate:** operators can detect and respond to common failures; restore and rollback have been exercised and evidenced.
 
-- An AWS account with billing alerts and deployment access.
-- A custom domain and DNS access for a public HTTPS application.
-- Agreed numeric launch targets for cost, traffic, availability, recovery, and retention.
-- Confirmation that the selected Bedrock model is available and acceptable for the project’s data in `ap-south-1`.
-- A decision on production pilot operators and support ownership.
+### 10. Controlled pilot release
 
-AWS service versions, regional availability, and prices must be checked at implementation time rather than assumed from this roadmap.
+- Run production-like end-to-end, migration, authorization, accessibility, browser, load/resilience, restore, and focused security validation.
+- Resolve critical/high security findings before inviting pilot users. Describe independent review accurately; do not claim certification.
+- Invite only known pilot users. Keep synthetic data until the owner accepts privacy, access, retention, support, and recovery controls.
+- Deploy only from reviewed `main` changes, perform post-deploy smoke checks, monitor errors/latency/usage/cost, and retain an actionable rollback path.
+
+**Gate:** all agreed pilot criteria pass and the owner accepts documented limitations before real data is introduced.
+
+## Branch, commit, CI/CD, and database workflow
+
+1. Keep `main` releasable. Start each slice from the latest approved `main` using `feat/<scope>`, `fix/<scope>`, or `docs/<scope>`. If the current product baseline is still on an unmerged branch, integrate that baseline through review rather than silently branching future releases from the starter scaffold.
+2. Keep commits focused and use prefixes such as `feat:`, `fix:`, `test:`, `docs:`, and `ci:`. Never commit credentials or bundle unrelated changes.
+3. Open a PR for each slice. Require relevant CI checks and explicit review for identity, authorization, secret, and schema changes. Merge only after checks pass.
+4. Previews use non-production secrets and data. Production promotion is from approved changes merged to `main`; changes with migration/auth risk include a reviewed rollout and rollback strategy.
+5. Use an isolated Neon branch for schema work where practical. Inspect schema diffs, verify forward migrations against representative data, and never direct preview/test automation to production data.
+6. Run post-deploy smoke checks and inspect service health/logs. Roll back the application or use a reviewed database recovery procedure; never improvise a destructive migration rollback.
+7. Update relevant docs and record acceptance evidence in the PR.
+
+## Production readiness definition
+
+Production readiness is a release gate, not a successful deploy alone. For the pilot capabilities, require:
+
+- explicit requirements and acceptance criteria
+- tested authentication, authorization, and data isolation
+- repeatable PostgreSQL migrations and a successful restore exercise
+- managed secrets, least privilege, and secure network transport
+- relevant CI checks and a reviewed deploy/rollback path
+- monitored health/errors/capacity and cost
+- agreed recovery, retention, and support ownership
+- security and accessibility verification appropriate to exposure
+
+This checklist does not imply an SLA, certification, or multi-tenant isolation.
+
+## Open validations
+
+- Recheck Clerk free-tier terms, production-domain requirements, role/organization fit, and Vercel compatibility before implementing identity.
+- Recheck Vercel, Render, Neon, Groq, notification, and attachment-provider quotas/terms/costs when each capability is scheduled.
+- Agree numeric workload, performance, recovery, retention, and cost-alert targets with the pilot owner before production launch.
+- Confirm who operates and supports the pilot, who can access its data, and how retention/deletion requests are handled.
+- Revisit AWS and multi-tenant architecture only as separately approved scope.

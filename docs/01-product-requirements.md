@@ -24,18 +24,20 @@ Problem reported
 - Human users remain accountable for final operational decisions.
 - High-impact actions require explicit human approval.
 - The product must support a single integrated workflow rather than isolated tools.
-- The near-term MVP is the authenticated, human-operated ticket workflow and a small web UI.
-- AI, evidence retrieval, teams, dashboards, search, notifications, attachments, and user administration are deferred beyond the near-term MVP.
+- The current public deployment is a synthetic-data portfolio demo; it is not a production pilot.
+- The next target is a secure, invite-only single-organization pilot on Vercel, Render, and Neon.
+- AWS deployment and multi-tenant SaaS are deferred. AI, evidence retrieval, teams, dashboards, server-side search, notifications, attachments, and administration are staged capabilities and must not be represented as implemented until their acceptance criteria pass.
+- The initial AI provider is planned to be Groq, with credentials held only in backend secrets and consequential actions gated by explicit human approval.
 
-### Near-term MVP requirement boundary
+### Current implementation boundary
 
-The current MVP includes ticket intake, ownership-scoped viewing, support-agent assignment, lifecycle status changes, attributed comments, activity history, and the web screens needed to use those capabilities. The remaining requirements in this document describe the longer-term product vision and are not implied to be implemented in the MVP. In particular:
+The current implementation provides ticket intake, ownership-scoped viewing, support-agent assignment, lifecycle status changes, attributed comments, activity history, and web screens for those capabilities. This is a working ticket-workflow foundation and public demo, not the complete product or a secure production pilot. The remaining requirements describe the staged product target and are not implied to be implemented. In particular:
 
-- FR-003 MVP updates are limited to status and assignment operations; arbitrary ticket-field updates are deferred.
-- FR-007 and FR-011 through FR-020 are deferred beyond the near-term MVP.
-- Authentication initially supports customer and support-agent accounts; broader role administration is deferred.
+- FR-003 current updates are limited to the operations implemented by the API; each additional field/action requires authorization and audit tests.
+- Team administration, AI, evidence retrieval, search, dashboards, notifications, attachments, and administration are planned, not current capabilities.
+- Current local/demo authentication is not the selected production identity design. Clerk is the proposed pilot provider, subject to validation of current plan limits, production-domain requirements, and role/organization fit.
 
-The broader product is intended to be delivered in stages after the MVP rather than treated as out of scope forever. See the [production readiness roadmap](./07-production-readiness-roadmap.md) for the planned sequence, AWS deployment constraints, and release gates. Those roadmap items remain planned until their acceptance criteria are implemented and verified.
+The broader product is intended to be delivered in stages rather than treated as permanently out of scope. See the [production readiness roadmap](./07-production-readiness-roadmap.md) for the sequence and release gates. A requirement remains planned until its acceptance criteria are implemented and verified.
 
 ---
 
@@ -434,31 +436,31 @@ This preserves a direct path from requirement -> implementation -> test -> evide
 
 ---
 
-## 8. MVP scope summary
+## 8. Current foundation and next delivery
 
-The near-term MVP should deliver the following, in this order:
+The existing ticket-workflow foundation includes:
 
-1. user login and authorization
-2. ticket creation, ownership-scoped list, and details
-3. enforced status lifecycle, including reopening resolved tickets
-4. support-agent username assignment
-5. comments with authenticated author and timestamp
-6. activity history and role/ownership enforcement
-7. a focused web UI for customer and support-agent workflows
-8. automated backend and frontend validation in CI
+1. ticket creation, ownership-scoped list, and details
+2. lifecycle transitions, including reopening resolved tickets
+3. support-agent assignment
+4. comments with author and timestamp
+5. activity history and role/ownership checks
+6. a focused customer and support-agent web workflow
+7. backend/frontend validation in CI
 
-Deferred: AI triage and evidence retrieval, teams, dashboards, search/filtering, notifications, attachments, and administration UI. Revisit these after validating the core ticket workflow with users.
+Next delivery stages are: secure product/identity contract and delivery gates; API and authorization hardening; complete workflows and bounded server-side search; teams/admin; governed knowledge; asynchronous, human-reviewed Groq triage; notifications/attachments; dashboards and operational readiness; controlled pilot. AWS and multi-tenant SaaS remain out of scope for this target.
 
 ---
 
-## 9. Requirement closure criteria
+## 9. Requirement and release evidence
 
-This requirements document is complete once:
+Requirements remain active until their planned capability is implemented and verified. For each release slice:
 
 - every major product workflow has a corresponding requirement
 - security and audit requirements are explicit
 - AI responsibilities are clearly bounded and human-controlled
-- acceptance criteria are testable
-- the MVP scope is clearly separated from future enhancements
+- acceptance criteria map to automated tests or recorded verification evidence
+- implemented, planned, and deferred capabilities are labelled accurately
+- the release scope is linked to the staged roadmap and acceptance gates
 
-At that point, the product team can move into architecture, API contract design, database design, and the first vertical slice of implementation.
+The current ticket workflow is already implemented as a portfolio-demo foundation. The next product work is to harden that foundation for the approved single-organization pilot; see the [production readiness roadmap](./07-production-readiness-roadmap.md). Passing one slice does not imply that later capabilities or the full pilot are complete.
