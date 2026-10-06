@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -31,7 +32,9 @@ public class ProductionSecurityConfig {
     @Bean
     SecurityFilterChain productionSecurityFilterChain(
             HttpSecurity http,
-            Converter<Jwt, ? extends AbstractAuthenticationToken> auth0JwtAuthenticationConverter
+            Converter<Jwt, ? extends AbstractAuthenticationToken> auth0JwtAuthenticationConverter,
+            @Value("${solvix.security.rate-limit.authenticated-per-minute:120}") int authenticatedLimit,
+            @Value("${solvix.security.rate-limit.unauthenticated-per-minute:30}") int unauthenticatedLimit
     ) throws Exception {
         http
                 .cors(org.springframework.security.config.Customizer.withDefaults())
@@ -42,6 +45,7 @@ public class ProductionSecurityConfig {
                         .requestMatchers("/api/v1/auth/login").denyAll()
                         .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/**").denyAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMINISTRATOR")
                         .requestMatchers("/api/v1/tickets/**").authenticated()
                         .anyRequest().denyAll()
                 )
@@ -49,6 +53,10 @@ public class ProductionSecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(auth0JwtAuthenticationConverter)));
+        http.addFilterAfter(
+                new ApiRateLimitFilter(authenticatedLimit, unauthenticatedLimit),
+                BearerTokenAuthenticationFilter.class
+        );
 
         return http.build();
     }
@@ -87,4 +95,5 @@ public class ProductionSecurityConfig {
     ) {
         return new Auth0JwtAuthenticationConverter(userRepository);
     }
+
 }

@@ -27,6 +27,9 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Version
+    private long version;
+
     protected UserEntity() {
     }
 
@@ -64,5 +67,9 @@ public class UserEntity {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }
