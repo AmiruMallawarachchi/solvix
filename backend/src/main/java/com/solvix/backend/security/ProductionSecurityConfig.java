@@ -10,40 +10,37 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 @Configuration
 @EnableMethodSecurity
 @Profile("production")
 public class ProductionSecurityConfig {
     @Bean
-    SecurityFilterChain productionSecurityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain productionSecurityFilterChain(
+            HttpSecurity http,
+            Converter<Jwt, ? extends AbstractAuthenticationToken> auth0JwtAuthenticationConverter
+    ) throws Exception {
         http
                 .cors(org.springframework.security.config.Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/v1/auth/login").denyAll()
+                        .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/**").denyAll()
                         .requestMatchers("/api/v1/tickets/**").authenticated()
                         .anyRequest().denyAll()
@@ -51,21 +48,21 @@ public class ProductionSecurityConfig {
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2ResourceServer(resourceServer -> resourceServer
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(cognitoJwtAuthenticationConverter())));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(auth0JwtAuthenticationConverter)));
 
         return http.build();
     }
 
     @Bean
-    JwtDecoder cognitoJwtDecoder(
-            @Value("${solvix.security.cognito.issuer-uri}") String issuerUri,
-            @Value("${solvix.security.cognito.jwk-set-uri}") String jwkSetUri,
-            @Value("${solvix.security.cognito.client-id}") String clientId
+    JwtDecoder auth0JwtDecoder(
+            @Value("${solvix.security.auth0.issuer-uri}") String issuerUri,
+            @Value("${solvix.security.auth0.jwk-set-uri}") String jwkSetUri,
+            @Value("${solvix.security.auth0.audience}") String audience
     ) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
         OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuerUri);
-        OAuth2TokenValidator<Jwt> accessTokenValidator = new CognitoAccessTokenValidator(clientId);
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(issuerValidator, accessTokenValidator));
+        OAuth2TokenValidator<Jwt> audienceValidator = new Auth0AudienceValidator(audience);
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(issuerValidator, audienceValidator));
         return decoder;
     }
 
@@ -85,37 +82,9 @@ public class ProductionSecurityConfig {
     }
 
     @Bean
-    Converter<Jwt, ? extends AbstractAuthenticationToken> cognitoJwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter scopeConverter = new JwtGrantedAuthoritiesConverter();
-        Set<String> knownRoles = Set.of(
-                "CUSTOMER",
-                "SUPPORT_AGENT",
-                "DEVELOPER",
-                "TEAM_LEAD",
-                "MANAGER",
-                "ADMINISTRATOR"
-        );
-
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Collection<GrantedAuthority> authorities = new LinkedHashSet<>();
-            Collection<GrantedAuthority> scopes = scopeConverter.convert(jwt);
-            if (scopes != null) {
-                authorities.addAll(scopes);
-            }
-
-            Object groupsClaim = jwt.getClaims().get("cognito:groups");
-            if (groupsClaim instanceof Collection<?> groups) {
-                groups.stream()
-                        .filter(String.class::isInstance)
-                        .map(String.class::cast)
-                        .map(group -> group.toUpperCase(Locale.ROOT))
-                        .filter(knownRoles::contains)
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                        .forEach(authorities::add);
-            }
-            return authorities;
-        });
-        return converter;
+    Converter<Jwt, ? extends AbstractAuthenticationToken> auth0JwtAuthenticationConverter(
+            UserRepository userRepository
+    ) {
+        return new Auth0JwtAuthenticationConverter(userRepository);
     }
 }

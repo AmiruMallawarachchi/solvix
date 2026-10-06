@@ -21,16 +21,15 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 import com.sun.net.httpserver.HttpServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class CognitoJwtDecoderIntegrationTest {
-    private static final String ISSUER = "https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_test";
-    private static final String CLIENT_ID = "solvix-client";
+class Auth0JwtDecoderIntegrationTest {
+    private static final String ISSUER = "https://solvix-test.us.auth0.com/";
+    private static final String AUDIENCE = "https://api.solvix.example";
 
     private HttpServer jwksServer;
     private KeyPair keyPair;
@@ -56,7 +55,7 @@ class CognitoJwtDecoderIntegrationTest {
         jwksServer.start();
 
         String jwksUri = "http://127.0.0.1:" + jwksServer.getAddress().getPort() + "/jwks";
-        decoder = new ProductionSecurityConfig().cognitoJwtDecoder(ISSUER, jwksUri, CLIENT_ID);
+        decoder = new ProductionSecurityConfig().auth0JwtDecoder(ISSUER, jwksUri, AUDIENCE);
     }
 
     @AfterEach
@@ -65,49 +64,41 @@ class CognitoJwtDecoderIntegrationTest {
     }
 
     @Test
-    void acceptsCorrectlySignedCognitoAccessToken() throws Exception {
-        Jwt decoded = decoder.decode(token(ISSUER, CLIENT_ID, "access", Instant.now().plusSeconds(60)));
+    void acceptsCorrectlySignedTokenForConfiguredApi() throws Exception {
+        Jwt decoded = decoder.decode(token(ISSUER, AUDIENCE, Instant.now().plusSeconds(60)));
 
-        assertThat(decoded.getSubject()).isEqualTo("user-123");
-        assertThat(decoded.getClaimAsString("token_use")).isEqualTo("access");
+        assertThat(decoded.getSubject()).isEqualTo("auth0|user-123");
+        assertThat(decoded.getAudience()).contains(AUDIENCE);
     }
 
     @Test
     void rejectsIncorrectIssuer() throws Exception {
-        assertInvalidToken(token("https://attacker.example/issuer", CLIENT_ID, "access", Instant.now().plusSeconds(60)));
+        assertInvalidToken(token("https://attacker.example/issuer", AUDIENCE, Instant.now().plusSeconds(60)));
     }
 
     @Test
-    void rejectsTokenForAnotherClient() throws Exception {
-        assertInvalidToken(token(ISSUER, "another-client", "access", Instant.now().plusSeconds(60)));
-    }
-
-    @Test
-    void rejectsIdToken() throws Exception {
-        assertInvalidToken(token(ISSUER, CLIENT_ID, "id", Instant.now().plusSeconds(60)));
+    void rejectsTokenForAnotherApi() throws Exception {
+        assertInvalidToken(token(ISSUER, "https://another-api.example", Instant.now().plusSeconds(60)));
     }
 
     @Test
     void rejectsExpiredToken() throws Exception {
-        assertInvalidToken(token(ISSUER, CLIENT_ID, "access", Instant.now().minusSeconds(60)));
+        assertInvalidToken(token(ISSUER, AUDIENCE, Instant.now().minusSeconds(60)));
     }
 
     private void assertInvalidToken(String encodedToken) {
         assertThatThrownBy(() -> decoder.decode(encodedToken)).isInstanceOf(JwtException.class);
     }
 
-    private String token(String issuer, String clientId, String tokenUse, Instant expiresAt) throws Exception {
+    private String token(String issuer, String audience, Instant expiresAt) throws Exception {
         Instant issuedAt = Instant.now().minusSeconds(1);
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .issuer(issuer)
-                .subject("user-123")
+                .subject("auth0|user-123")
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issuedAt))
                 .expirationTime(Date.from(expiresAt))
-                .claim("client_id", clientId)
-                .claim("token_use", tokenUse)
-                .claim("scope", "openid")
-                .claim("cognito:groups", List.of("CUSTOMER"))
+                .audience(audience)
                 .build();
         SignedJWT signed = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("solvix-test-key").build(),

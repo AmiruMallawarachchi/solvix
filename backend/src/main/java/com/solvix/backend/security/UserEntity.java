@@ -14,8 +14,11 @@ public class UserEntity {
     @Column(nullable = false, unique = true, updatable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column
     private String passwordHash;
+
+    @Column(name = "auth0_subject", unique = true)
+    private String auth0Subject;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -28,9 +31,19 @@ public class UserEntity {
     }
 
     public UserEntity(String username, String passwordHash, UserRole role) {
+        this(username, passwordHash, role, null, true);
+    }
+
+    public UserEntity(String username, String passwordHash, UserRole role, String auth0Subject) {
+        this(username, passwordHash, role, auth0Subject, true);
+    }
+
+    public UserEntity(String username, String passwordHash, UserRole role, String auth0Subject, boolean enabled) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.role = role;
+        this.auth0Subject = auth0Subject;
+        this.enabled = enabled;
     }
 
     public String getUsername() {
@@ -39,6 +52,10 @@ public class UserEntity {
 
     public String getPasswordHash() {
         return passwordHash;
+    }
+
+    public String getAuth0Subject() {
+        return auth0Subject;
     }
 
     public UserRole getRole() {

@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  type AuthProfile,
   type AuthSession,
-  beginCognitoSignIn,
-  completeCognitoSignIn,
-  redirectToCognitoSignOut,
-} from "@/lib/cognito-auth";
+  beginAuth0SignIn,
+  completeAuth0SignIn,
+  redirectToAuth0SignOut,
+} from "@/lib/auth0-auth";
+import { SolvixMark } from "@/components/solvix-mark";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE ?? "local";
@@ -14,6 +16,7 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 type TicketStatus = "NEW" | "TRIAGED" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
 type TicketPriority = (typeof PRIORITIES)[number];
+type QueueFilter = "ALL" | "OPEN" | "IN_PROGRESS" | "RESOLVED";
 
 type Comment = {
   id: number;
@@ -114,6 +117,28 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+function filterTickets(
+  tickets: Ticket[],
+  queueFilter: QueueFilter,
+  ticketSearch: string,
+  priorityFilter: TicketPriority | "ALL",
+): Ticket[] {
+  const search = ticketSearch.trim().toLocaleLowerCase();
+  return tickets.filter((ticket) => {
+    const matchesQueue =
+      queueFilter === "ALL" ||
+      (queueFilter === "OPEN" && ["NEW", "TRIAGED", "ASSIGNED"].includes(ticket.status)) ||
+      (queueFilter === "IN_PROGRESS" && ticket.status === "IN_PROGRESS") ||
+      (queueFilter === "RESOLVED" && ["RESOLVED", "CLOSED"].includes(ticket.status));
+    const matchesPriority = priorityFilter === "ALL" || ticket.priority === priorityFilter;
+    const matchesSearch =
+      !search ||
+      [ticket.title, ticket.id, ticket.createdBy, ticket.assignee ?? "", ticket.description]
+        .some((value) => value.toLocaleLowerCase().includes(search));
+    return matchesQueue && matchesPriority && matchesSearch;
+  });
+}
+
 export default function Home() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -121,11 +146,23 @@ export default function Home() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>("ALL");
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "ALL">("ALL");
   const isLocalAuth = AUTH_MODE === "local";
-  const isCognitoAuth = AUTH_MODE === "cognito";
+  const isAuth0Auth = AUTH_MODE === "auth0";
 
-  const selectedTicket = tickets.find((ticket) => ticket.id === selectedId) ?? null;
   const isSupport = session?.role === "SUPPORT_AGENT";
+  const ticketCounts = useMemo(() => ({
+    open: tickets.filter((ticket) => ["NEW", "TRIAGED", "ASSIGNED"].includes(ticket.status)).length,
+    inProgress: tickets.filter((ticket) => ticket.status === "IN_PROGRESS").length,
+    resolved: tickets.filter((ticket) => ["RESOLVED", "CLOSED"].includes(ticket.status)).length,
+  }), [tickets]);
+  const visibleTickets = useMemo(
+    () => filterTickets(tickets, queueFilter, ticketSearch, priorityFilter),
+    [priorityFilter, queueFilter, ticketSearch, tickets],
+  );
+  const selectedTicket = visibleTickets.find((ticket) => ticket.id === selectedId) ?? null;
 
   const handleFailure = useCallback(
     (reason: unknown) => {
@@ -166,20 +203,20 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!isCognitoAuth) return;
+    if (!isAuth0Auth) return;
 
     let active = true;
     void (async () => {
       setBusy(true);
       try {
-        const auth = await completeCognitoSignIn();
-        if (!auth || !active) return;
+        const token = await completeAuth0SignIn();
+        if (!token || !active) return;
 
+        const profile = await request<AuthProfile>("/api/v1/auth/me", token);
+        if (!active) return;
+        const auth: AuthSession = { ...profile, token };
         setSession(auth);
-        const loadedTickets = await refreshTickets(auth.token);
-        if (loadedTickets.length > 0) {
-          await loadHistory(loadedTickets[0].id, auth.token);
-        }
+        await refreshTickets(token);
       } catch (reason) {
         if (active) handleFailure(reason);
       } finally {
@@ -190,7 +227,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [handleFailure, isCognitoAuth, loadHistory, refreshTickets]);
+  }, [handleFailure, isAuth0Auth, refreshTickets]);
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,10 +243,7 @@ export default function Home() {
         }),
       });
       setSession(auth);
-      const loadedTickets = await refreshTickets(auth.token);
-      if (loadedTickets.length > 0) {
-        await loadHistory(loadedTickets[0].id, auth.token);
-      }
+      await refreshTickets(auth.token);
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) {
         setError("Invalid username or password.");
@@ -325,61 +359,92 @@ export default function Home() {
     setSelectedId(null);
     setActivities([]);
     setError("");
-    if (isCognitoAuth) {
+    if (isAuth0Auth) {
       try {
-        redirectToCognitoSignOut();
+        redirectToAuth0SignOut();
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Could not sign out.");
       }
     }
   }
 
+  function changeQueueFilter(filter: QueueFilter) {
+    setQueueFilter(filter);
+    const firstTicket = filterTickets(tickets, filter, ticketSearch, priorityFilter)[0];
+    setSelectedId(firstTicket?.id ?? null);
+    setActivities([]);
+    if (firstTicket && session) {
+      void loadHistory(firstTicket.id, session.token).catch(handleFailure);
+    }
+  }
+
   if (!session) {
     return (
       <main className="login-shell">
-        <section className="login-card">
-          <div className="brand-mark">S</div>
-          <p className="eyebrow">OPERATIONS WORKSPACE</p>
-          <h1>Welcome to Solvix</h1>
-          <p className="muted">Sign in to manage your support workflow.</p>
-          {isLocalAuth ? (
-            <form className="form-stack" onSubmit={submitLogin}>
-              <label>
-                Username
-                <input name="username" autoComplete="username" required />
-              </label>
-              <label>
-                Password
-                <input name="password" type="password" autoComplete="current-password" required />
-              </label>
-              {error && <p className="error-message" role="alert">{error}</p>}
-              <button className="primary-button" disabled={busy}>
-                {busy ? "Signing in..." : "Sign in"}
-              </button>
-            </form>
-          ) : isCognitoAuth ? (
-            <div className="form-stack">
-              {error && <p className="error-message" role="alert">{error}</p>}
-              <button
-                className="primary-button"
-                disabled={busy}
-                onClick={() => {
-                  setBusy(true);
-                  setError("");
-                  void beginCognitoSignIn().catch((reason: unknown) => {
-                    setBusy(false);
-                    setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
-                  });
-                }}
-              >
-                {busy ? "Checking sign-in..." : "Continue with Cognito"}
-              </button>
+        <div className="login-layout">
+          <section className="login-intro">
+            <div className="brand-mark"><SolvixMark /></div>
+            <p className="eyebrow">PORTFOLIO DEMO · SUPPORT OPERATIONS</p>
+            <h1>A calmer way to move support work forward.</h1>
+            <p className="login-lede">
+              Solvix is a focused ticket workspace that connects customer requests,
+              support workflows, and an auditable activity trail.
+            </p>
+            <div className="feature-list">
+              <span><strong>01</strong> Create and prioritize requests</span>
+              <span><strong>02</strong> Collaborate through comments</span>
+              <span><strong>03</strong> Progress work with governed statuses</span>
             </div>
-          ) : (
-            <p className="error-message" role="alert">Unsupported authentication mode: {AUTH_MODE}.</p>
-          )}
-          <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
-        </section>
+            <p className="stack-note">Next.js · Spring Boot · PostgreSQL · Docker</p>
+          </section>
+
+          <section className="login-card">
+            <p className="eyebrow">LIVE RECRUITER SANDBOX</p>
+            <h2>Explore the workspace</h2>
+            <p className="muted">Use the synthetic demo account to try the complete flow.</p>
+            {isLocalAuth ? (
+              <form className="form-stack" onSubmit={submitLogin}>
+                <label>
+                  Username
+                  <input name="username" autoComplete="username" defaultValue="solvix-demo-user" required />
+                </label>
+                <label>
+                  Password
+                  <input name="password" type="password" autoComplete="current-password" defaultValue="SolvixDemo-2026!Ticket" required />
+                </label>
+                {error && <p className="error-message" role="alert">{error}</p>}
+                <button className="primary-button" disabled={busy}>
+                  {busy ? "Signing in..." : "Enter the demo"}
+                </button>
+              </form>
+            ) : isAuth0Auth ? (
+              <div className="form-stack">
+                {error && <p className="error-message" role="alert">{error}</p>}
+                <button
+                  className="primary-button"
+                  disabled={busy}
+                  onClick={() => {
+                    setBusy(true);
+                    setError("");
+                    void beginAuth0SignIn().catch((reason: unknown) => {
+                      setBusy(false);
+                      setError(reason instanceof Error ? reason.message : "Could not start sign-in.");
+                    });
+                  }}
+                >
+                  {busy ? "Checking sign-in..." : "Continue with Auth0"}
+                </button>
+              </div>
+            ) : (
+              <p className="error-message" role="alert">Unsupported authentication mode: {AUTH_MODE}.</p>
+            )}
+            <div className="demo-note">
+              <strong>Synthetic data only</strong>
+              <span>Free-tier services may take a few seconds to wake up.</span>
+            </div>
+            <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
+          </section>
+        </div>
       </main>
     );
   }
@@ -388,7 +453,7 @@ export default function Home() {
     <main className="workspace">
       <header className="topbar">
         <div className="brand-lockup">
-          <div className="brand-mark small">S</div>
+          <div className="brand-mark small"><SolvixMark /></div>
           <span>solvix</span>
           <span className="workspace-tag">TICKETS</span>
         </div>
@@ -402,15 +467,38 @@ export default function Home() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">SUPPORT OPERATIONS</p>
-          <h1>{isSupport ? "Ticket workspace" : "Your requests"}</h1>
+          <h1>{isSupport ? "Support inbox" : "Your requests"}</h1>
           <p className="muted">
-            {isSupport ? "Triage, assign, and move work through its lifecycle." : "Track your issues and follow the conversation."}
+            {isSupport ? "Review incoming requests and keep every issue moving." : "Track your issues and follow the conversation."}
           </p>
         </div>
-        <div className="ticket-count"><strong>{tickets.length}</strong><span>{tickets.length === 1 ? "ticket" : "tickets"}</span></div>
+        <div className="queue-health"><span className="health-indicator" />Workspace active</div>
       </div>
 
       {error && <p className="error-banner" role="alert">{error}</p>}
+
+      <section className="queue-overview" aria-label="Ticket overview">
+        <button className={`overview-card ${queueFilter === "ALL" ? "overview-selected" : ""}`} onClick={() => changeQueueFilter("ALL")} aria-pressed={queueFilter === "ALL"}>
+          <span className="overview-label">All requests</span>
+          <strong>{tickets.length}</strong>
+          <span className="overview-caption">Across your workspace</span>
+        </button>
+        <button className={`overview-card ${queueFilter === "OPEN" ? "overview-selected" : ""}`} onClick={() => changeQueueFilter("OPEN")} aria-pressed={queueFilter === "OPEN"}>
+          <span className="overview-label">Open</span>
+          <strong>{ticketCounts.open}</strong>
+          <span className="overview-caption">New and awaiting action</span>
+        </button>
+        <button className={`overview-card ${queueFilter === "IN_PROGRESS" ? "overview-selected" : ""}`} onClick={() => changeQueueFilter("IN_PROGRESS")} aria-pressed={queueFilter === "IN_PROGRESS"}>
+          <span className="overview-label">In progress</span>
+          <strong>{ticketCounts.inProgress}</strong>
+          <span className="overview-caption">Currently being worked</span>
+        </button>
+        <button className={`overview-card ${queueFilter === "RESOLVED" ? "overview-selected" : ""}`} onClick={() => changeQueueFilter("RESOLVED")} aria-pressed={queueFilter === "RESOLVED"}>
+          <span className="overview-label">Resolved</span>
+          <strong>{ticketCounts.resolved}</strong>
+          <span className="overview-caption">Completed requests</span>
+        </button>
+      </section>
 
       <div className="workspace-grid">
         <aside className="left-column">
@@ -443,16 +531,37 @@ export default function Home() {
           <section className="panel ticket-list-panel">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">{isSupport ? "ALL ACTIVE WORK" : "YOUR WORK"}</p>
-                <h2>Tickets</h2>
+                <p className="eyebrow">{isSupport ? "QUEUE" : "REQUESTS"}</p>
+                <h2>Ticket list <span className="list-count">{visibleTickets.length}</span></h2>
               </div>
               <button className="icon-button" aria-label="Refresh tickets" onClick={() => refreshTickets(session.token)}>↻</button>
             </div>
+            <div className="queue-controls">
+              <label className="search-field">
+                <span className="sr-only">Search tickets</span>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={ticketSearch}
+                  onChange={(event) => setTicketSearch(event.target.value)}
+                  placeholder="Search requests"
+                />
+              </label>
+              <label className="priority-filter">
+                <span className="sr-only">Filter by priority</span>
+                <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "ALL")}>
+                  <option value="ALL">Any priority</option>
+                  {PRIORITIES.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                </select>
+              </label>
+            </div>
             {tickets.length === 0 ? (
               <p className="empty-state">No tickets yet. Create one to get started.</p>
+            ) : visibleTickets.length === 0 ? (
+              <p className="empty-state">No requests match these filters. Try another search or priority.</p>
             ) : (
               <div className="ticket-list">
-                {tickets.map((ticket) => (
+                {visibleTickets.map((ticket) => (
                   <button
                     className={`ticket-row ${selectedId === ticket.id ? "selected" : ""}`}
                     key={ticket.id}
@@ -472,8 +581,12 @@ export default function Home() {
           {!selectedTicket ? (
             <div className="detail-empty">
               <div className="empty-icon">◎</div>
-              <h2>Select a ticket</h2>
-              <p className="muted">Ticket details, conversation, and activity will appear here.</p>
+              <h2>{tickets.length > 0 ? "No request selected" : "Select a ticket"}</h2>
+              <p className="muted">
+                {tickets.length > 0
+                  ? "Choose a matching request from the queue to review its details."
+                  : "Ticket details, conversation, and activity will appear here."}
+              </p>
             </div>
           ) : (
             <>

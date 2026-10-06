@@ -24,9 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-        "solvix.security.cognito.issuer-uri=https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_test",
-        "solvix.security.cognito.jwk-set-uri=https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_test/.well-known/jwks.json",
-        "solvix.security.cognito.client-id=test-client",
+        "solvix.security.auth0.issuer-uri=https://solvix-test.us.auth0.com/",
+        "solvix.security.auth0.jwk-set-uri=https://solvix-test.us.auth0.com/.well-known/jwks.json",
+        "solvix.security.auth0.audience=https://api.solvix.example",
         "solvix.security.cors.allowed-origin=http://localhost:3000"
 })
 @AutoConfigureMockMvc
@@ -43,8 +43,11 @@ class ProductionSecurityIntegrationTest {
     private CorsConfigurationSource corsConfigurationSource;
 
     @Test
-    void productionProfileRequiresCognitoAuthenticationAndDoesNotBootstrapLocalUsers() throws Exception {
+    void productionProfileRequiresAuth0AuthenticationAndDoesNotBootstrapLocalUsers() throws Exception {
         mockMvc.perform(get("/api/v1/tickets"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(post("/api/v1/auth/login")
