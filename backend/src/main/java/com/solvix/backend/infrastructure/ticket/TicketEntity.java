@@ -46,6 +46,9 @@ public class TicketEntity {
 
     private String assignee;
 
+    @Column(name = "team_id")
+    private UUID teamId;
+
     private String category;
 
     @Version
@@ -65,7 +68,7 @@ public class TicketEntity {
     }
 
     public TicketEntity(UUID id, String title, String description, TicketPriority priority, TicketStatus status,
-                       String createdBy, String assignee, String category, Long version, Instant createdAt, Instant updatedAt) {
+                       String createdBy, String assignee, UUID teamId, String category, Long version, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -73,6 +76,7 @@ public class TicketEntity {
         this.status = status;
         this.createdBy = createdBy;
         this.assignee = assignee;
+        this.teamId = teamId;
         this.category = category;
         this.version = version;
         this.createdAt = createdAt;
@@ -88,6 +92,7 @@ public class TicketEntity {
                 ticket.getStatus(),
                 ticket.getCreatedBy(),
                 ticket.getAssignee(),
+                ticket.getTeamId(),
                 ticket.getCategory(),
                 ticket.getVersion(),
                 ticket.getCreatedAt(),
@@ -108,6 +113,7 @@ public class TicketEntity {
                 status,
                 createdBy,
                 assignee,
+                teamId,
                 category,
                 version,
                 createdAt,
@@ -170,6 +176,14 @@ public class TicketEntity {
 
     public void setAssignee(String assignee) {
         this.assignee = assignee;
+    }
+
+    public UUID getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(UUID teamId) {
+        this.teamId = teamId;
     }
 
     public String getCategory() {

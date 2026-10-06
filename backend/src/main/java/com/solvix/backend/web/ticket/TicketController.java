@@ -107,6 +107,17 @@ public class TicketController {
         return TicketResponse.from(ticketService.assign(id, request.assignee(), expectedVersion, actor(authentication)));
     }
 
+    @PostMapping("/{id}/assign-team")
+    public TicketResponse assignTeam(
+            @PathVariable UUID id,
+            @Valid @RequestBody AssignTeamRequest request,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            Authentication authentication
+    ) {
+        Long expectedVersion = parseVersionHeader(ifMatch);
+        return TicketResponse.from(ticketService.assignTeam(id, request.teamId(), expectedVersion, actor(authentication)));
+    }
+
     @PostMapping("/{id}/comments")
     public TicketResponse addComment(
             @PathVariable UUID id,
@@ -142,6 +153,8 @@ public class TicketController {
     ) {}
 
     public record AssignTicketRequest(@NotBlank String assignee) {}
+
+    public record AssignTeamRequest(@NotNull UUID teamId) {}
 
     public record AddCommentRequest(@NotBlank String comment) {}
 
@@ -196,6 +209,7 @@ public class TicketController {
             com.solvix.backend.domain.ticket.TicketStatus status,
             String createdBy,
             String assignee,
+            UUID teamId,
             String category,
             Long version,
             java.time.Instant createdAt,
@@ -211,6 +225,7 @@ public class TicketController {
                     ticket.getStatus(),
                     ticket.getCreatedBy(),
                     ticket.getAssignee(),
+                    ticket.getTeamId(),
                     ticket.getCategory(),
                     ticket.getVersion() != null ? ticket.getVersion() : 0L,
                     ticket.getCreatedAt(),

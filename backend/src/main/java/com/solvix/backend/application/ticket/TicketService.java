@@ -106,6 +106,22 @@ public class TicketService {
     }
 
     @Transactional
+    public Ticket assignTeam(UUID id, UUID teamId, TicketActor actor) {
+        return assignTeam(id, teamId, null, actor);
+    }
+
+    @Transactional
+    public Ticket assignTeam(UUID id, UUID teamId, Long expectedVersion, TicketActor actor) {
+        requireManager(actor);
+        Ticket ticket = findById(id, actor);
+        verifyVersion(ticket, expectedVersion);
+        ticket.assignTeam(teamId);
+        Ticket saved = ticketRepository.save(ticket);
+        record(saved, TicketActivityType.ASSIGNED, actor.username(), "Assigned to team " + teamId);
+        return saved;
+    }
+
+    @Transactional
     public Ticket addComment(UUID id, String comment, TicketActor actor) {
         return addComment(id, comment, null, actor);
     }

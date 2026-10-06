@@ -17,16 +17,17 @@ public class Ticket {
     private TicketPriority priority;
     private TicketStatus status;
     private String assignee;
+    private UUID teamId;
     private String category;
     private Long version;
     private Instant updatedAt;
 
     public Ticket(UUID id, String title, String description, TicketPriority priority, String createdBy) {
-        this(id, title, description, priority, createdBy, null, TicketStatus.NEW, null, Instant.now(), Instant.now(), null, List.of());
+        this(id, title, description, priority, createdBy, null, TicketStatus.NEW, null, null, Instant.now(), Instant.now(), null, List.of());
     }
 
     public Ticket(UUID id, String title, String description, TicketPriority priority, String createdBy, String category) {
-        this(id, title, description, priority, createdBy, category, TicketStatus.NEW, null, Instant.now(), Instant.now(), null, List.of());
+        this(id, title, description, priority, createdBy, category, TicketStatus.NEW, null, null, Instant.now(), Instant.now(), null, List.of());
     }
 
     private Ticket(
@@ -38,6 +39,7 @@ public class Ticket {
             String category,
             TicketStatus status,
             String assignee,
+            UUID teamId,
             Instant createdAt,
             Instant updatedAt,
             Long version,
@@ -51,6 +53,7 @@ public class Ticket {
         this.category = category;
         this.status = status == null ? TicketStatus.NEW : status;
         this.assignee = assignee;
+        this.teamId = teamId;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         this.updatedAt = updatedAt == null ? this.createdAt : updatedAt;
         this.version = version;
@@ -67,13 +70,14 @@ public class Ticket {
             TicketStatus status,
             String createdBy,
             String assignee,
+            UUID teamId,
             String category,
             Long version,
             Instant createdAt,
             Instant updatedAt,
             List<TicketComment> comments
     ) {
-        return new Ticket(id, title, description, priority, createdBy, category, status, assignee, createdAt, updatedAt, version, comments);
+        return new Ticket(id, title, description, priority, createdBy, category, status, assignee, teamId, createdAt, updatedAt, version, comments);
     }
 
     public void changeStatus(TicketStatus newStatus) {
@@ -95,6 +99,11 @@ public class Ticket {
             throw new IllegalArgumentException("Ticket must be triaged before it can be assigned");
         }
         this.assignee = requireText(assignee, "assignee");
+        touch();
+    }
+
+    public void assignTeam(UUID teamId) {
+        this.teamId = Objects.requireNonNull(teamId, "teamId must not be null");
         touch();
     }
 
@@ -132,6 +141,7 @@ public class Ticket {
     public TicketStatus getStatus() { return status; }
     public String getCreatedBy() { return createdBy; }
     public String getAssignee() { return assignee; }
+    public UUID getTeamId() { return teamId; }
     public String getCategory() { return category; }
     public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }
