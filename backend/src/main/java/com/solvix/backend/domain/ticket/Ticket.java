@@ -17,10 +17,16 @@ public class Ticket {
     private TicketPriority priority;
     private TicketStatus status;
     private String assignee;
+    private String category;
+    private Long version;
     private Instant updatedAt;
 
     public Ticket(UUID id, String title, String description, TicketPriority priority, String createdBy) {
-        this(id, title, description, priority, createdBy, TicketStatus.NEW, null, Instant.now(), Instant.now(), List.of());
+        this(id, title, description, priority, createdBy, null, TicketStatus.NEW, null, Instant.now(), Instant.now(), null, List.of());
+    }
+
+    public Ticket(UUID id, String title, String description, TicketPriority priority, String createdBy, String category) {
+        this(id, title, description, priority, createdBy, category, TicketStatus.NEW, null, Instant.now(), Instant.now(), null, List.of());
     }
 
     private Ticket(
@@ -29,10 +35,12 @@ public class Ticket {
             String description,
             TicketPriority priority,
             String createdBy,
+            String category,
             TicketStatus status,
             String assignee,
             Instant createdAt,
             Instant updatedAt,
+            Long version,
             List<TicketComment> comments
     ) {
         this.id = Objects.requireNonNull(id);
@@ -40,10 +48,12 @@ public class Ticket {
         this.description = requireText(description, "description");
         this.priority = Objects.requireNonNull(priority);
         this.createdBy = requireText(createdBy, "createdBy");
+        this.category = category;
         this.status = status == null ? TicketStatus.NEW : status;
         this.assignee = assignee;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         this.updatedAt = updatedAt == null ? this.createdAt : updatedAt;
+        this.version = version;
         if (comments != null) {
             this.comments.addAll(comments);
         }
@@ -57,11 +67,13 @@ public class Ticket {
             TicketStatus status,
             String createdBy,
             String assignee,
+            String category,
+            Long version,
             Instant createdAt,
             Instant updatedAt,
             List<TicketComment> comments
     ) {
-        return new Ticket(id, title, description, priority, createdBy, status, assignee, createdAt, updatedAt, comments);
+        return new Ticket(id, title, description, priority, createdBy, category, status, assignee, createdAt, updatedAt, version, comments);
     }
 
     public void changeStatus(TicketStatus newStatus) {
@@ -120,6 +132,8 @@ public class Ticket {
     public TicketStatus getStatus() { return status; }
     public String getCreatedBy() { return createdBy; }
     public String getAssignee() { return assignee; }
+    public String getCategory() { return category; }
+    public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public List<TicketComment> getComments() { return Collections.unmodifiableList(comments); }

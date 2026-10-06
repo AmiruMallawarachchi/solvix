@@ -2,6 +2,7 @@ package com.solvix.backend.web.error;
 
 import com.solvix.backend.application.ticket.TicketNotFoundException;
 import com.solvix.backend.application.ticket.TicketAccessDeniedException;
+import com.solvix.backend.application.ticket.OptimisticLockConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -21,6 +22,12 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public Map<String, String> handleTicketAccessDenied(TicketAccessDeniedException exception) {
         return Map.of("error", "FORBIDDEN", "message", exception.getMessage());
+    }
+
+    @ExceptionHandler(OptimisticLockConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleOptimisticLockConflict(OptimisticLockConflictException exception) {
+        return Map.of("error", "CONFLICT", "message", exception.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

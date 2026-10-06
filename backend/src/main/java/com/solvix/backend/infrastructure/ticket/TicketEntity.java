@@ -13,6 +13,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,6 +46,11 @@ public class TicketEntity {
 
     private String assignee;
 
+    private String category;
+
+    @Version
+    private Long version;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -59,7 +65,7 @@ public class TicketEntity {
     }
 
     public TicketEntity(UUID id, String title, String description, TicketPriority priority, TicketStatus status,
-                       String createdBy, String assignee, Instant createdAt, Instant updatedAt) {
+                       String createdBy, String assignee, String category, Long version, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -67,6 +73,8 @@ public class TicketEntity {
         this.status = status;
         this.createdBy = createdBy;
         this.assignee = assignee;
+        this.category = category;
+        this.version = version;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -80,6 +88,8 @@ public class TicketEntity {
                 ticket.getStatus(),
                 ticket.getCreatedBy(),
                 ticket.getAssignee(),
+                ticket.getCategory(),
+                ticket.getVersion(),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt()
         );
@@ -98,6 +108,8 @@ public class TicketEntity {
                 status,
                 createdBy,
                 assignee,
+                category,
+                version,
                 createdAt,
                 updatedAt,
                 comments.stream().map(TicketCommentEntity::toDomain).toList()
@@ -158,6 +170,22 @@ public class TicketEntity {
 
     public void setAssignee(String assignee) {
         this.assignee = assignee;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public Instant getCreatedAt() {

@@ -33,9 +33,19 @@ type Ticket = {
   status: TicketStatus;
   createdBy: string;
   assignee: string | null;
+  category?: string | null;
+  version?: number;
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
+};
+
+type PageResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 };
 
 type Activity = {
