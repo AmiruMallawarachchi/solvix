@@ -4,20 +4,24 @@
   <img src="./frontend/public/solvix-mark.svg" alt="Solvix radial signal logo" width="76" />
 </p>
 
-**AI-assisted support operations platform for turning customer requests into
-clear, accountable work.**
+**Enterprise ticketing and operations platform for turning customer requests
+into clear, accountable work.**
 
 [![Live demo](https://img.shields.io/badge/Live%20demo-Try%20Solvix-18765d?style=for-the-badge)](https://solvix-amiru.vercel.app/)
 [![GitHub](https://img.shields.io/badge/Source-GitHub-181717?logo=github)](https://github.com/AmiruMallawarachchi/solvix)
 [![Frontend](https://img.shields.io/badge/frontend-Next.js-black)](./frontend)
 [![Backend](https://img.shields.io/badge/backend-Spring%20Boot%203-6db33f)](./backend)
 [![Database](https://img.shields.io/badge/database-PostgreSQL-336791)](./backend/src/main/resources/db/migration)
+[![CI](https://github.com/AmiruMallawarachchi/solvix/actions/workflows/ci.yml/badge.svg)](https://github.com/AmiruMallawarachchi/solvix/actions/workflows/ci.yml)
 
 ## Try the live demo
 
 **[Open Solvix →](https://solvix-amiru.vercel.app/)**
 
 The public demo is a synthetic recruiter sandbox. It is deployed as:
+
+> **Synthetic demo — resets daily.** Do not enter real or personal data. The
+> first load can take about a minute while Render and Neon wake up.
 
 ```text
 Browser
@@ -43,8 +47,9 @@ Once signed in, try the complete workflow:
 3. Review the activity history.
 4. Move the ticket through its governed lifecycle.
 
-The demo uses synthetic data only. Render's free instance may sleep after
-inactivity, so the first request can take a few seconds.
+The demo uses synthetic data only. The API applies server-side input and rate
+limits. Demo data should be treated as disposable; a scheduled reset remains
+required before using the shared login for sustained public traffic.
 
 ## Why this project exists
 
@@ -66,7 +71,7 @@ focuses on the workflow fundamentals:
 | Frontend | Next.js 16, React 19, TypeScript, responsive CSS |
 | API | Spring Boot 3.4, Java 17, REST controllers |
 | Persistence | PostgreSQL, Spring Data JPA, Flyway |
-| Security | Public demo: local credentials and short-lived JWTs for synthetic data; isolated pilot: Auth0 PKCE/JWT validation with database-owned roles and pre-provisioned identities |
+| Security | Public demo: local credentials and short-lived JWTs for synthetic data; future AWS pilot: Cognito/JWT validation with database-owned roles |
 | Delivery | Docker, Render Blueprint, Vercel, Neon |
 | Quality | Backend tests, frontend lint/type-check/build, GitHub Actions |
 
@@ -74,10 +79,23 @@ The backend enforces the ticket lifecycle:
 
 ```text
 NEW → TRIAGED → ASSIGNED → IN_PROGRESS → RESOLVED → CLOSED
+                         ↑                    |
+                         └── reopen ─────────┘
 ```
 
-Invalid transitions are rejected by the domain layer, and ownership is taken
-from the authenticated identity rather than trusted client input.
+Invalid transitions are rejected by the domain layer. A resolved ticket may be
+reopened to `IN_PROGRESS`; `CLOSED` is terminal. Ownership is taken from the
+authenticated identity rather than trusted client input.
+
+## Architecture
+
+![Solvix deployment architecture](./docs/diagrams/deployment-architecture.svg)
+
+The public demo runs on Vercel, Render, and Neon. The AWS/Cognito deployment
+described in the roadmap is a future plan, not the current hosting setup.
+
+The current deployment does not implement AI triage; the AI workflow is a
+planned, human-reviewed follow-on capability.
 
 ## Repository guide
 
@@ -160,8 +178,8 @@ npm run build
 ## Deployment note
 
 The live portfolio deployment is intentionally separate from the documented
-AWS production target. The demo prioritizes a real, low-cost URL a recruiter
-can open, while the repository also documents an AWS path using Cognito,
+AWS production target. The public demo uses local/demo credentials and JWTs.
+The future AWS path uses Cognito,
 ECS/Fargate, RDS, Secrets Manager, CloudWatch, and CDK. The AWS architecture
 is not represented as continuously running infrastructure.
 

@@ -6,7 +6,7 @@ This document explains the initial AI design for Solvix and defines how the AI s
 
 ## Delivery status
 
-AI triage and evidence retrieval are part of the longer-term product vision and are not implemented in the current deployment. The human ticket workflow is the foundation for a later AI stage. The planned first provider is Groq, called from the backend with credentials held only in server-side secrets. Add AI only after identity, permission-scoped knowledge, and operational foundations are ready; see the [production readiness roadmap](./07-production-readiness-roadmap.md).
+AI triage and evidence retrieval are part of the longer-term product vision and are not implemented in the current deployment. The human ticket workflow is the foundation for a later AI stage. The planned first provider is Groq, called from the backend with credentials held only in server-side secrets. Add AI only after identity, permission-scoped knowledge, and operational foundations are ready; see the [production readiness roadmap](./07-production-readiness-roadmap.md). Do not describe the current deployment as AI-assisted.
 
 ## AI design principles
 

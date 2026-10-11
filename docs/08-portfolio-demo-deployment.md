@@ -10,7 +10,7 @@ Keep the separately documented AWS architecture as a future design and portfolio
 
 The target is **$0 ongoing service spend**, using only free plans/allowances and stopping if a provider requires a paid upgrade or payment commitment. “Free” is conditional on provider eligibility, current terms, region, and usage quotas; it is not a promise of permanent availability or zero risk. Recheck provider pricing and terms immediately before deployment. Do not enter a paid plan or attach payment details as a workaround for exhausted allowances without an explicit decision.
 
-The following is a candidate deployment for a personal, low-traffic demonstration, checked on September 30, 2026:
+The following is the current deployment for a personal, low-traffic demonstration, checked on October 11, 2026:
 
 | Component | Candidate | Why it fits the demo | Important limits |
 | --- | --- | --- | --- |
@@ -20,23 +20,25 @@ The following is a candidate deployment for a personal, low-traffic demonstratio
 
 Official plan references: [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Render free instances](https://render.com/docs/free), and [Neon plans](https://neon.com/docs/introduction/plans). Revalidate them at deployment time.
 
-This hosting combination is a **candidate, not yet a deployed or guaranteed-free service**. Render's free API can experience cold starts, so show a clear “waking up”/retry state in the UI rather than presenting a timeout as an application error. Keep the API and frontend deployable elsewhere so that provider limits do not force a redesign.
+This hosting combination is **deployed, but not a guaranteed-free or production service**. Render's free API can experience cold starts, so show a clear “waking up”/retry state in the UI rather than presenting a timeout as an application error. Keep the API and frontend deployable elsewhere so that provider limits do not force a redesign.
 
 ## Public demo safety requirements
 
 The current ticket UI and API were built for authenticated local users, not unrestricted public traffic. Do not deploy the existing support login or bootstrap credentials as a public demo.
 
-Before publishing a live URL:
+The live demo currently includes server-side rate limiting and bounded ticket
+and comment inputs. The following controls remain required before treating the
+shared-login demo as safe for sustained public traffic:
 
-- Add a demo-specific access mode with server-enforced limits. Do not rely on hidden/disabled frontend controls as authorization.
+- Replace the shared customer identity with isolated per-visitor demo data; no agent or administrator login is shared.
 - Use synthetic seed content only. Never load real tickets, personal data, AWS credentials, Cognito secrets, or local bootstrap secrets into the public demo.
 - Do not expose a support-agent or administrator session, even as a shared demo password.
 - Define which operations visitors can try. Keep assignment and privileged workflow actions disabled on the server; allow only the deliberately designed demo actions.
 - Ensure one visitor cannot view or change another visitor's submitted data. Use isolated per-session demo data or a read-only catalogue; do not share one customer identity for all visitors.
-- Bound request size and rates, validate all inputs, avoid logging secrets or unnecessary submitted content, and provide a safe reset/expiry policy for visitor-created demo data.
+- Ticket/comment request sizes are bounded and API requests are rate-limited; add a scheduled daily reset for visitor-created demo data.
 - Verify the demo against a fresh database, including migrations, synthetic seeding, access-denial tests, reset behavior, and browser smoke tests.
 - Configure provider secrets only in the respective hosting dashboards. Keep `.env` files and credentials out of Git.
-- Add a visible demo banner describing cold starts, synthetic data, and that the environment is not for real support requests.
+- The UI displays a visible banner describing cold starts and synthetic data; keep the warning that the environment is not for real support requests.
 - Add a reliable health endpoint and a UI recovery path for sleeping/unavailable API or database services.
 - Recheck each provider's acceptable-use terms, free quotas, account eligibility, and billing configuration before deployment. Monitor usage and remove the deployment if it leaves the approved free allowance.
 

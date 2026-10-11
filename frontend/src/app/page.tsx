@@ -450,7 +450,7 @@ export default function Home() {
             )}
             <div className="demo-note">
               <strong>Synthetic data only</strong>
-              <span>Free-tier services may take a few seconds to wake up.</span>
+              <span>Synthetic demo · resets daily · first load can take about a minute.</span>
             </div>
             <p className="footnote">Your access token stays in memory and ends when you sign out or refresh.</p>
           </section>

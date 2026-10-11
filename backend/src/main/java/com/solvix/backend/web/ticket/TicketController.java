@@ -9,6 +9,7 @@ import com.solvix.backend.domain.ticket.TicketStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -142,8 +143,8 @@ public class TicketController {
     }
 
     public record CreateTicketRequest(
-            @NotBlank String title,
-            @NotBlank String description,
+            @NotBlank @Size(max = 160) String title,
+            @NotBlank @Size(max = 5000) String description,
             @NotNull com.solvix.backend.domain.ticket.TicketPriority priority,
             String category
     ) {}
@@ -152,11 +153,11 @@ public class TicketController {
             @NotNull com.solvix.backend.domain.ticket.TicketStatus status
     ) {}
 
-    public record AssignTicketRequest(@NotBlank String assignee) {}
+    public record AssignTicketRequest(@NotBlank @Size(max = 255) String assignee) {}
 
     public record AssignTeamRequest(@NotNull UUID teamId) {}
 
-    public record AddCommentRequest(@NotBlank String comment) {}
+    public record AddCommentRequest(@NotBlank @Size(max = 2000) String comment) {}
 
     public record PageResponse<T>(
             List<T> content,
